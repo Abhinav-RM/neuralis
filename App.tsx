@@ -22,7 +22,8 @@ import { StudentDashboard } from './components/student/StudentDashboard';
 
 const AppContent: React.FC = () => {
     const { state, updateState } = useApp();
-    const [isLoading, setIsLoading] = useState(true);
+    const [isInitialBoot, setIsInitialBoot] = useState(true);
+    const [isModuleBooting, setIsModuleBooting] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
     const [isFirstLogin, setIsFirstLogin] = useState(false);
     const wasOnboardedOnMount = useRef(state.hasOnboarded);
@@ -30,6 +31,24 @@ const AppContent: React.FC = () => {
     const [passcode, setPasscode] = useState('');
     const [showPasscodeModal, setShowPasscodeModal] = useState(false);
     const [error, setError] = useState(false);
+
+    // Initial boot sequence (3s fixed)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsInitialBoot(false);
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Re-lock when role changes away from athlete
+    useEffect(() => {
+        if (state.userType !== 'athlete') {
+            setIsLocked(true);
+            setPasscode('');
+            setShowPasscodeModal(false);
+            setIsModuleBooting(false);
+        }
+    }, [state.userType]);
 
     // Redirect if current module is disabled
     useEffect(() => {
@@ -43,32 +62,25 @@ const AppContent: React.FC = () => {
         }
     }, [state.currentModule, state.enabledModules, updateState]);
 
-    useEffect(() => {
-        // Initial load sequence
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-            if (state.hasOnboarded && state.userType === 'athlete') {
-                setShowWelcome(true);
-            }
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, []); // Only on mount
-
-    // Handle transition from onboarding to welcome screen
-    useEffect(() => {
-        if (state.hasOnboarded && state.userType === 'athlete' && !isLoading && !showWelcome && !wasOnboardedOnMount.current) {
-            setShowWelcome(true);
-            setIsFirstLogin(true);
-            wasOnboardedOnMount.current = true;
-        }
-    }, [state.hasOnboarded, state.userType, isLoading, showWelcome]);
-
     const handlePasscodeSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (passcode === '2628') {
             setIsLocked(false);
             setShowPasscodeModal(false);
             setError(false);
+            
+            // Trigger stylized module boot after unlock
+            setIsModuleBooting(true);
+            setTimeout(() => {
+                setIsModuleBooting(false);
+                if (state.hasOnboarded && state.userType === 'athlete') {
+                    setShowWelcome(true);
+                    if (!wasOnboardedOnMount.current) {
+                        setIsFirstLogin(true);
+                        wasOnboardedOnMount.current = true;
+                    }
+                }
+            }, 3000);
         } else {
             setError(true);
             setPasscode('');
@@ -76,10 +88,7 @@ const AppContent: React.FC = () => {
         }
     };
 
-    if (isLoading) {
-        if (state.userType === 'athlete') {
-            return <LoadingScreen />;
-        }
+    if (isInitialBoot) {
         return <NeutralLoadingScreen />;
     }
 
@@ -92,11 +101,6 @@ const AppContent: React.FC = () => {
             return <StudentOnboarding />;
         }
         return <StudentDashboard />;
-    }
-
-    // Athlete flow
-    if (!state.hasOnboarded) {
-        return <Onboarding />;
     }
 
     if (isLocked) {
@@ -203,6 +207,15 @@ const AppContent: React.FC = () => {
                 </AnimatePresence>
             </div>
         );
+    }
+
+    // Athlete flow
+    if (!state.hasOnboarded) {
+        return <Onboarding />;
+    }
+
+    if (isModuleBooting) {
+        return <LoadingScreen />;
     }
 
     if (showWelcome) {

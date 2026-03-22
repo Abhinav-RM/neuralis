@@ -23,9 +23,12 @@ export const NeutralLoadingScreen: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="mt-8 text-gray-500 font-mono text-[10px] tracking-[0.3em] uppercase"
+                className="mt-8 text-center flex flex-col gap-2"
             >
-                System Initializing
+                <p className="text-gray-500 font-mono text-[10px] tracking-[0.3em] uppercase">Loading Screen is under development</p>
+                <p className="text-gray-600 font-sans text-[8px] tracking-widest uppercase animate-pulse">
+                    System Initializing
+                </p>
             </motion.div>
         </div>
     );
