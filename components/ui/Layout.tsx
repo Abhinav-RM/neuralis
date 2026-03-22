@@ -160,6 +160,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                         <div className="h-px bg-white/10 mx-2" />
                     </div>
                     <NavItem module="settings" icon={Settings} label="Settings" />
+                    
+                    <div className="pt-4 mt-4 border-t border-white/10">
+                        <button
+                            onClick={() => {
+                                updateState({ userType: 'student' });
+                                sound.playClick();
+                            }}
+                            className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-gray-400 hover:bg-white/5 hover:text-accent group"
+                        >
+                            <GraduationCap size={20} className="transition-transform group-hover:scale-110" />
+                            <span className="font-heading font-medium tracking-wide">Student UI</span>
+                        </button>
+                    </div>
                 </nav>
             </div>
 

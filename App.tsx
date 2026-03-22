@@ -136,9 +136,17 @@ const AppContent: React.FC = () => {
                         </p>
                     </div>
 
-                    <div className="flex items-center justify-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-[0.2em] pt-4">
-                        <Zap size={14} className="text-accent" />
-                        Neuralis OS v2.0
+                    <div className="flex flex-col items-center justify-center gap-4 pt-4">
+                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">
+                            <Zap size={14} className="text-accent" />
+                            Neuralis OS v2.0
+                        </div>
+                        <button 
+                            onClick={() => updateState({ userType: 'student' })}
+                            className="text-xs font-bold text-accent/60 hover:text-accent uppercase tracking-widest transition-colors py-2 px-4 border border-accent/20 rounded-full hover:bg-accent/5"
+                        >
+                            Switch to Student Mode
+                        </button>
                     </div>
                 </motion.div>
 

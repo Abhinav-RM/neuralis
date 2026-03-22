@@ -59,6 +59,12 @@ export const LoadingScreen: React.FC = () => {
                     </div>
                 </div>
 
+                <div className="text-center mb-8">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] animate-pulse">
+                        Loading screen will be updated shortly
+                    </p>
+                </div>
+
                 {/* Progress Bar */}
                 <div className="mb-2 flex justify-between text-xs text-accent font-bold uppercase tracking-widest">
                     <span>{stage}</span>
