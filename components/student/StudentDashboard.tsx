@@ -10,10 +10,7 @@ import { AttendanceRecord } from '../../types';
 import { MiniQuiz } from './MiniQuiz';
 
 const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good morning';
-    if (hour >= 12 && hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    return 'NEURALIS';
 };
 
 const getDaysRemaining = (dateStr: string) => {
@@ -167,14 +164,32 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
 
             {/* Modals */}
             {showModal && selectedDate && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative">
-                        <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
-                        <h3 className="text-xl font-bold mb-4">Attendance for {selectedDate.toLocaleDateString()}</h3>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+                    <div className="max-w-sm w-full bg-[#0a0a0c] p-8 rounded-[2rem] border border-blue-500/20 shadow-2xl shadow-blue-500/10 relative overflow-hidden">
+                        {/* Background Glow */}
+                        <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                        
+                        <button onClick={() => setShowModal(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"><X size={20}/></button>
+                        
+                        <div className="text-center mb-8">
+                            <div className="inline-flex p-3 rounded-2xl bg-white/5 text-blue-400 mb-4 border border-white/10">
+                                <GraduationCap size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold text-white tracking-tight">Attendance Record</h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-2">{selectedDate.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                        </div>
+
                         <div className="space-y-3">
-                            <Button className="w-full bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30" onClick={() => handleStatus('present')}>Mark Present</Button>
-                            <Button className="w-full bg-rose-500/20 text-rose-400 hover:bg-rose-500/30" onClick={() => handleStatus('absent-personal')}>Mark Absent</Button>
-                            <Button className="w-full bg-gray-500/20 text-gray-400 hover:bg-gray-500/30" onClick={() => handleStatus('absent-college')}>College Holiday</Button>
+                            <Button variant="secondary" className="w-full bg-green-500/10 text-green-300 border-green-500/20 hover:bg-green-500/20" onClick={() => handleStatus('present')}>Mark Present</Button>
+                            <Button variant="secondary" className="w-full bg-red-950/60 text-red-200 border-red-500/30 hover:bg-red-900/60" onClick={() => handleStatus('absent-personal')}>Mark Absent</Button>
+                            <Button variant="secondary" className="w-full bg-yellow-500/10 text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20" onClick={() => handleStatus('absent-college')}>College Holiday</Button>
+                            
+                            <button 
+                                onClick={() => setShowModal(false)}
+                                className="w-full py-4 text-[10px] font-bold text-gray-500 hover:text-gray-300 uppercase tracking-[0.3em] transition-colors mt-2"
+                            >
+                                Cancel Selection
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -501,7 +516,7 @@ export const StudentDashboard: React.FC = () => {
                             {getGreeting()}
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-                            Student OS • {state.userName || 'User'}
+                            Student OS
                         </p>
                     </div>
                     <button className="lg:hidden text-2xl text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}><X size={24}/></button>
@@ -546,7 +561,7 @@ export const StudentDashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu size={24}/></button>
                         <h1 className="text-xl font-sans font-bold tracking-tight">
-                            {getGreeting()}, {state.userName}
+                            {getGreeting()}
                         </h1>
                     </div>
                     <div className="w-10" />
@@ -556,7 +571,7 @@ export const StudentDashboard: React.FC = () => {
                 <header className="hidden lg:block px-8 py-8 border-b border-white/5 bg-[#0a0a0c] sticky top-0 z-20">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-sans font-bold tracking-tight">{getGreeting()}, {state.userName}</h1>
+                            <h1 className="text-2xl font-sans font-bold tracking-tight">{getGreeting()}</h1>
                             <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
                         </div>
                         <div className="text-right">
@@ -654,7 +669,7 @@ export const StudentDashboard: React.FC = () => {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                 {/* Today's Schedule */}
                                 <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                    <h2 className="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
                                         <Calendar className="text-blue-400" /> Today's Schedule
                                     </h2>
                                     {classesList.length > 0 ? (
@@ -680,8 +695,8 @@ export const StudentDashboard: React.FC = () => {
                         <div className="space-y-8">
                             {/* Attendance Tracker */}
                             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                    <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                         <GraduationCap className="text-blue-400" /> Attendance Tracker
                                     </h2>
                                     {attendanceStatus.msg && (
@@ -722,10 +737,10 @@ export const StudentDashboard: React.FC = () => {
                                         <button
                                             onClick={() => markAttendance('present')}
                                             className={clsx(
-                                                "py-3 rounded-xl text-sm font-medium transition-colors border",
+                                                "py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border",
                                                 todayRecord?.status === 'present'
-                                                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                                                    : "bg-black/20 text-gray-400 border-white/5 hover:bg-white/5"
+                                                    ? "bg-green-500/20 text-green-300 border-green-500/30 ring-1 ring-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.1)]"
+                                                    : "bg-black/20 text-gray-500 border-white/5 hover:border-green-500/30 hover:text-green-300"
                                             )}
                                         >
                                             Present
@@ -733,10 +748,10 @@ export const StudentDashboard: React.FC = () => {
                                         <button
                                             onClick={() => markAttendance('absent-personal')}
                                             className={clsx(
-                                                "py-3 rounded-xl text-sm font-medium transition-colors border",
+                                                "py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border",
                                                 todayRecord?.status === 'absent-personal'
-                                                    ? "bg-rose-500/20 text-rose-400 border-rose-500/30"
-                                                    : "bg-black/20 text-gray-400 border-white/5 hover:bg-white/5"
+                                                    ? "bg-red-950/60 text-red-200 border-red-500/30 ring-1 ring-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                                                    : "bg-black/20 text-gray-500 border-white/5 hover:border-red-500/30 hover:text-red-200"
                                             )}
                                         >
                                             Absent
@@ -744,13 +759,13 @@ export const StudentDashboard: React.FC = () => {
                                         <button
                                             onClick={() => markAttendance('absent-college')}
                                             className={clsx(
-                                                "py-3 rounded-xl text-sm font-medium transition-colors border",
+                                                "py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all border",
                                                 todayRecord?.status === 'absent-college'
-                                                    ? "bg-gray-500/20 text-gray-400 border-gray-500/30"
-                                                    : "bg-black/20 text-gray-400 border-white/5 hover:bg-white/5"
+                                                    ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30 ring-1 ring-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.1)]"
+                                                    : "bg-black/20 text-gray-500 border-white/5 hover:border-yellow-500/30 hover:text-yellow-400"
                                             )}
                                         >
-                                            College Holiday
+                                            Holiday
                                         </button>
                                     </div>
                                 </div>
@@ -761,7 +776,7 @@ export const StudentDashboard: React.FC = () => {
 
                             {/* Combined Attendance */}
                             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                <h2 className="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
                                     <Calendar className="text-blue-400" /> Combined Attendance
                                 </h2>
                                 {selectedMonths.length > 0 ? (
@@ -803,8 +818,8 @@ export const StudentDashboard: React.FC = () => {
                     {activeSection === 'timetable' && (
                         <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
                             {/* Weekly Timetable */}
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-bold flex items-center gap-2">
+                            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+                                <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                     <Calendar className="text-blue-400" /> Weekly Timetable
                                 </h2>
                                 {editingTimetable ? (
@@ -890,8 +905,8 @@ export const StudentDashboard: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Assignments */}
                             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                    <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                         <CheckSquare className="text-blue-400" /> Assignments
                                     </h2>
                                     <button 
@@ -1048,8 +1063,8 @@ export const StudentDashboard: React.FC = () => {
 
                             {/* Upcoming Exams */}
                             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                                    <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                         <BookOpen className="text-blue-400" /> Upcoming Exams
                                     </h2>
                                     <button 
@@ -1328,8 +1343,8 @@ export const StudentDashboard: React.FC = () => {
                                 </section>
 
                                 <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-xl font-bold flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                                        <h2 className="text-lg md:text-xl font-bold flex items-center gap-2">
                                             <Bell className="text-blue-400" /> General Notifications
                                         </h2>
                                         <button 

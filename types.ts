@@ -1,4 +1,4 @@
-
+ 
 export type ModuleType = 'football' | 'gym' | 'college' | 'life' | 'settings' | 'evaluation' | 'bio' | 'quiz';
 
 export interface Achievement {

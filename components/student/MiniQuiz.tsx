@@ -149,22 +149,22 @@ export const MiniQuiz: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-blue-500/20 text-blue-400 rounded-2xl border border-blue-500/20">
+                    <div className="p-2 md:p-3 bg-blue-500/20 text-blue-400 rounded-2xl border border-blue-500/20">
                         <BrainCircuit size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold font-heading tracking-tight">Mini Quiz</h1>
-                        <p className="text-sm text-gray-400">Master your knowledge with custom drills</p>
+                        <h1 className="text-xl md:text-2xl font-bold font-heading tracking-tight">Mini Quiz</h1>
+                        <p className="text-xs md:text-sm text-gray-400">Master your knowledge with custom drills</p>
                     </div>
                 </div>
                 {view === 'manage' && (
                     <Button 
                         onClick={() => setIsAdding(true)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-500 text-white flex items-center gap-2 text-sm"
                     >
-                        <Plus size={18} /> Add Question
+                        <Plus size={16} /> Add Question
                     </Button>
                 )}
             </div>

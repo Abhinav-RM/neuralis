@@ -12,10 +12,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
-        if (hour >= 5 && hour < 12) return 'Good morning';
-        if (hour >= 12 && hour < 17) return 'Good afternoon';
-        return 'Good evening';
+        return 'NEURALIS';
     };
     
     // Level Up State
@@ -125,7 +122,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu /></button>
                     <div className="text-center">
                         <h1 className="font-sans font-bold text-xl tracking-tight text-white">
-                            {getGreeting()}, {state.userName}
+                            {getGreeting()}
                         </h1>
                     </div>
                     <div className="w-10" /> {/* Balanced Spacer */}
@@ -143,7 +140,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                             {getGreeting()}
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-                            OS v2.1 • {state.userName || 'User'}
+                            OS v2.1
                         </p>
                     </div>
                     <button className="lg:hidden text-2xl" onClick={() => setSidebarOpen(false)}>×</button>

@@ -39,7 +39,10 @@ export const StudentOnboarding: React.FC = () => {
                         <input 
                             type="text" 
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                sound.playTerminalType();
+                            }}
                             placeholder="Enter your name..."
                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-4 text-lg focus:border-blue-500 outline-none transition-all placeholder:text-gray-600"
                             autoFocus
