@@ -9,8 +9,15 @@ import { sound } from '../../utils/sound';
 import { AttendanceRecord } from '../../types';
 import { MiniQuiz } from './MiniQuiz';
 
-const getGreeting = () => {
-    return 'NEURALIS';
+const getGreeting = (time: Date, userName?: string) => {
+    const hrs = time.getHours();
+    let greet = 'Good evening';
+    if (hrs >= 5 && hrs < 12) {
+        greet = 'Good morning';
+    } else if (hrs >= 12 && hrs < 17) {
+        greet = 'Good afternoon';
+    }
+    return userName ? `${greet}, ${userName}` : greet;
 };
 
 const getDaysRemaining = (dateStr: string) => {
@@ -314,7 +321,7 @@ export const StudentDashboard: React.FC = () => {
     };
 
     const confirmReset = () => {
-        updateState({ userType: null, hasOnboarded: false, userName: '' });
+        updateState({ userType: 'student', hasOnboarded: false, userName: '' });
         setShowResetModal(false);
     };
 
@@ -513,7 +520,7 @@ export const StudentDashboard: React.FC = () => {
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
                         <h2 className="font-sans font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">
-                            {getGreeting()}
+                            NEURALIS
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
                             Student OS
@@ -549,7 +556,7 @@ export const StudentDashboard: React.FC = () => {
                 <div className="p-4 border-t border-white/10">
                     <button onClick={handleReset} className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-amber-400 hover:bg-amber-500/10">
                         <LogOut size={20} />
-                        <span className="font-medium">Switch Roles</span>
+                        <span className="font-medium">Reset Profile</span>
                     </button>
                 </div>
             </div>
@@ -561,7 +568,7 @@ export const StudentDashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu size={24}/></button>
                         <h1 className="text-xl font-sans font-bold tracking-tight">
-                            {getGreeting()}
+                            {getGreeting(currentTime, state.userName)}
                         </h1>
                     </div>
                     <div className="w-10" />
@@ -571,7 +578,7 @@ export const StudentDashboard: React.FC = () => {
                 <header className="hidden lg:block px-8 py-8 border-b border-white/5 bg-[#0a0a0c] sticky top-0 z-20">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-sans font-bold tracking-tight">{getGreeting()}</h1>
+                            <h1 className="text-2xl font-sans font-bold tracking-tight">{getGreeting(currentTime, state.userName)}</h1>
                             <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
                         </div>
                         <div className="text-right">
@@ -1585,8 +1592,8 @@ export const StudentDashboard: React.FC = () => {
                         <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
                             <AlertCircle size={24} />
                         </div>
-                        <h3 className="text-xl font-bold mb-2">Switch Roles?</h3>
-                        <p className="text-gray-400 text-sm mb-6">Are you sure you want to switch roles? This will reset your current session.</p>
+                        <h3 className="text-xl font-bold mb-2">Reset Profile?</h3>
+                        <p className="text-gray-400 text-sm mb-6">Are you sure you want to reset your profile? This will ask for your name again but preserve your academic records.</p>
                         <div className="flex gap-3">
                             <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowResetModal(false)}>Cancel</Button>
                             <Button className="flex-1 bg-amber-500 text-white hover:bg-amber-600" onClick={confirmReset}>Confirm</Button>

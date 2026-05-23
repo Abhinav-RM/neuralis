@@ -41,7 +41,7 @@ const BOUNTY_POOL = [
 ];
 
 const INITIAL_STATE: AppState = {
-    userType: null,
+    userType: 'student',
     startDate: null,
     dob: null,
     currentModule: 'football',
@@ -363,7 +363,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     parsed.notificationMessages = INITIAL_STATE.notificationMessages;
                 }
                 if (parsed.hasOnboarded && !parsed.userType) {
-                    parsed.userType = 'athlete';
+                    parsed.userType = 'student';
+                }
+                if (parsed.userType !== 'student') {
+                    parsed.userType = 'student';
                 }
                 if (!parsed.miniQuiz) {
                     parsed.miniQuiz = INITIAL_STATE.miniQuiz;
