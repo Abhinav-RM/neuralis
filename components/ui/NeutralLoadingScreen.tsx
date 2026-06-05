@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { GraduationCap } from 'lucide-react';
 
 interface NeutralLoadingScreenProps {
     progress: number;
@@ -34,13 +35,13 @@ export const NeutralLoadingScreen: React.FC<NeutralLoadingScreenProps> = ({ prog
                     <motion.div
                         animate={{ 
                             scale: [1, 1.08, 1], 
-                            opacity: [0.3, 0.6, 0.3],
-                            borderColor: ['rgba(59, 130, 246, 0.2)', 'rgba(99, 102, 241, 0.4)', 'rgba(59, 130, 246, 0.2)']
+                            opacity: [0.8, 1, 0.8],
+                            borderColor: ['rgba(59, 130, 246, 0.3)', 'rgba(99, 102, 241, 0.6)', 'rgba(59, 130, 246, 0.3)']
                         }}
                         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                        className="w-16 h-16 rounded-2xl border flex items-center justify-center bg-white/[0.02] backdrop-blur-md"
+                        className="w-16 h-16 rounded-2xl border flex items-center justify-center bg-white/[0.03] backdrop-blur-md shadow-[0_0_20px_rgba(59,130,246,0.15)]"
                     >
-                        <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-500 opacity-80" />
+                        <GraduationCap className="w-8 h-8 text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]" />
                     </motion.div>
                 </motion.div>
 

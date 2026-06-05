@@ -8,7 +8,7 @@ import { ParticleCanvas } from './ParticleCanvas';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { state, updateState } = useApp();
-    const { accentColor, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle } = state.football.customization;
+    const { accentColor, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.football.customization;
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
     const getGreeting = () => {
@@ -29,23 +29,66 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         root.style.setProperty('--accent-dark', accentColor);
         root.style.setProperty('--bg-blur', `${blur}px`);
 
-        // Apply Font Styles
-        if (fontStyle === 'cyber') {
-            root.style.setProperty('--font-display', '"Share Tech Mono", monospace');
-            root.style.setProperty('--font-heading', '"Orbitron", sans-serif');
-            root.style.setProperty('--font-body', '"Rajdhani", sans-serif');
-        } else if (fontStyle === 'clean') {
-            root.style.setProperty('--font-display', '"Space Grotesk", sans-serif');
-            root.style.setProperty('--font-heading', '"Space Grotesk", sans-serif');
-            root.style.setProperty('--font-body', '"Archivo", sans-serif');
-        } else {
-            // Modern (Default)
-            root.style.setProperty('--font-display', '"Orbitron", sans-serif');
-            root.style.setProperty('--font-heading', '"Rajdhani", sans-serif');
-            root.style.setProperty('--font-body', '"Archivo", sans-serif');
+        // Resolve logo, greetings, body fonts
+        let activeLogoFont = logoFont;
+        let activeGreetingsFont = greetingsFont;
+        let activeBodyFont = bodyFont;
+
+        if (!activeLogoFont || !activeGreetingsFont || !activeBodyFont) {
+            if (fontStyle === 'cyber') {
+                activeLogoFont = activeLogoFont || 'mono';
+                activeGreetingsFont = activeGreetingsFont || 'orbitron';
+                activeBodyFont = activeBodyFont || 'rajdhani';
+            } else if (fontStyle === 'clean') {
+                activeLogoFont = activeLogoFont || 'grotesk';
+                activeGreetingsFont = activeGreetingsFont || 'grotesk';
+                activeBodyFont = activeBodyFont || 'archivo';
+            } else if (fontStyle === 'playful') {
+                activeLogoFont = activeLogoFont || 'fascinate';
+                activeGreetingsFont = activeGreetingsFont || 'fascinate';
+                activeBodyFont = activeBodyFont || 'honk';
+            } else if (fontStyle === 'elegant') {
+                activeLogoFont = activeLogoFont || 'cinzel-dec';
+                activeGreetingsFont = activeGreetingsFont || 'cinzel';
+                activeBodyFont = activeBodyFont || 'lora';
+            } else {
+                activeLogoFont = activeLogoFont || 'sekuya';
+                activeGreetingsFont = activeGreetingsFont || 'outfit';
+                activeBodyFont = activeBodyFont || 'jakarta';
+            }
         }
 
-    }, [accentColor, blur, fontStyle]);
+        // Set Logo Font Variable
+        let logoCSS = '"Sekuya", sans-serif';
+        if (activeLogoFont === 'mono') logoCSS = '"Share Tech Mono", monospace';
+        else if (activeLogoFont === 'grotesk') logoCSS = '"Space Grotesk", sans-serif';
+        else if (activeLogoFont === 'fascinate') logoCSS = '"Fascinate Inline", cursive';
+        else if (activeLogoFont === 'cinzel-dec') logoCSS = '"Cinzel Decorative", serif';
+        else if (activeLogoFont === 'orbitron') logoCSS = '"Orbitron", sans-serif';
+
+        // Set Greetings Font Variable
+        let greetingsCSS = '"Outfit", sans-serif';
+        if (activeGreetingsFont === 'orbitron') greetingsCSS = '"Orbitron", sans-serif';
+        else if (activeGreetingsFont === 'grotesk') greetingsCSS = '"Space Grotesk", sans-serif';
+        else if (activeGreetingsFont === 'fascinate') greetingsCSS = '"Fascinate Inline", cursive';
+        else if (activeGreetingsFont === 'cinzel') greetingsCSS = '"Cinzel", serif';
+        else if (activeGreetingsFont === 'rajdhani') greetingsCSS = '"Rajdhani", sans-serif';
+
+        // Set Body Font Variable
+        let bodyCSS = '"Plus Jakarta Sans", sans-serif';
+        if (activeBodyFont === 'rajdhani') bodyCSS = '"Rajdhani", sans-serif';
+        else if (activeBodyFont === 'archivo') bodyCSS = '"Archivo", sans-serif';
+        else if (activeBodyFont === 'grotesk') bodyCSS = '"Space Grotesk", sans-serif';
+        else if (activeBodyFont === 'honk') bodyCSS = '"Honk", cursive';
+        else if (activeBodyFont === 'lora') bodyCSS = '"Lora", serif';
+
+        root.style.setProperty('--font-display', logoCSS);
+        root.style.setProperty('--font-logo', logoCSS);
+        root.style.setProperty('--font-heading', greetingsCSS);
+        root.style.setProperty('--font-greetings', greetingsCSS);
+        root.style.setProperty('--font-body', bodyCSS);
+
+    }, [accentColor, blur, fontStyle, logoFont, greetingsFont, bodyFont]);
 
     // Level Up Watcher
     useEffect(() => {
@@ -121,7 +164,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 <div className="flex items-center justify-between p-4">
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu /></button>
                     <div className="text-center">
-                        <h1 className="font-sans font-bold text-xl tracking-tight text-white">
+                        <h1 className="font-logo font-bold text-lg tracking-[0.2em] text-white uppercase">
                             {getGreeting()}
                         </h1>
                     </div>
@@ -136,7 +179,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             )} style={{ paddingLeft: 'var(--safe-left)', paddingTop: 'var(--safe-top)', paddingBottom: 'var(--safe-bottom)' }}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
-                        <h2 className="font-sans font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-accent to-white">
+                        <h2 className="font-logo font-bold text-xl tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-accent to-white uppercase">
                             {getGreeting()}
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">

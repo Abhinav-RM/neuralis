@@ -56,12 +56,15 @@ const INITIAL_STATE: AppState = {
         achievements: INITIAL_ACHIEVEMENTS.filter(a => a.category === 'Football'),
         trainingPlan: DEFAULT_FOOTBALL_PLAN,
         customization: {
-            accentColor: '#9d4edd',
+            accentColor: '#3b82f6',
             blur: 10,
-            gradientStart: '#0a0a0a',
-            gradientMiddle: '#1a0033',
-            gradientEnd: '#0a0a0a',
-            fontStyle: 'modern',
+            gradientStart: '#0a0a0c',
+            gradientMiddle: '#0e131f',
+            gradientEnd: '#0a0a0c',
+            fontStyle: 'default',
+            logoFont: 'sekuya',
+            greetingsFont: 'outfit',
+            bodyFont: 'jakarta',
             backgroundImage: null,
             bgZoom: 100,
             bgX: 50,
@@ -328,10 +331,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                         delete parsed.bio.brainStats;
                     }
                 }
-                if (parsed.football && parsed.football.customization && parsed.football.customization.bgZoom === undefined) {
-                    parsed.football.customization.bgZoom = 100;
-                    parsed.football.customization.bgX = 50;
-                    parsed.football.customization.bgY = 50;
+                if (parsed.football && parsed.football.customization) {
+                    if (parsed.football.customization.bgZoom === undefined) {
+                        parsed.football.customization.bgZoom = 100;
+                        parsed.football.customization.bgX = 50;
+                        parsed.football.customization.bgY = 50;
+                    }
+                    if (parsed.football.customization.logoFont === undefined) {
+                        parsed.football.customization.logoFont = 'sekuya';
+                    }
+                    if (parsed.football.customization.greetingsFont === undefined) {
+                        parsed.football.customization.greetingsFont = 'outfit';
+                    }
+                    if (parsed.football.customization.bodyFont === undefined) {
+                        parsed.football.customization.bodyFont = 'jakarta';
+                    }
                 }
                 if (!parsed.dailyBounties) {
                     parsed.dailyBounties = INITIAL_STATE.dailyBounties;
@@ -378,6 +392,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         setIsLoaded(true);
     }, []);
+
+    // Refs for football/gym — avoids triggering the daily effect on every XP/training change
+    const footballRef = React.useRef(state.football);
+    const gymRef = React.useRef(state.gym);
+    React.useEffect(() => { footballRef.current = state.football; }, [state.football]);
+    React.useEffect(() => { gymRef.current = state.gym; }, [state.gym]);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -485,21 +505,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayKey = getDateKey(yesterday);
 
-            const fbHistory = state.football.trainingHistory as Record<string, any>;
-            const gymHistory = state.gym.trainingHistory as Record<string, any>;
+            // Use refs to read current football/gym state without triggering re-runs
+            const football = footballRef.current;
+            const gym = gymRef.current;
+
+            const fbHistory = football.trainingHistory as Record<string, any>;
+            const gymHistory = gym.trainingHistory as Record<string, any>;
 
             let footballUpdates: any = {};
             let gymUpdates: any = {};
 
             // Football Streak Check
             const lastFbLog = Object.keys(fbHistory).sort().reverse()[0];
-            if (lastFbLog && lastFbLog < yesterdayKey && state.football.currentStreak > 0) {
+            if (lastFbLog && lastFbLog < yesterdayKey && football.currentStreak > 0) {
                 footballUpdates.currentStreak = 0;
             }
 
             // Gym Streak Check
             const lastGymLog = Object.keys(gymHistory).sort().reverse()[0];
-            if (lastGymLog && lastGymLog < yesterdayKey && state.gym.currentStreak > 0) {
+            if (lastGymLog && lastGymLog < yesterdayKey && gym.currentStreak > 0) {
                 gymUpdates.currentStreak = 0;
             }
 
@@ -516,20 +540,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     tasks: selected
                 },
                 football: { 
-                    ...state.football, 
+                    ...football, 
                     ...footballUpdates,
                     totalTrainingHours: fbTotalHours,
                     totalTrainingSessions: fbTotalSessions
                 },
                 gym: { 
-                    ...state.gym, 
+                    ...gym, 
                     ...gymUpdates,
                     totalTrainingHours: gymTotalHours,
                     totalTrainingSessions: gymTotalSessions
                 }
             });
         }
-    }, [isLoaded, state.college.lastDailyCheck, state.dailyBounties.date, state.football, state.gym, updateState, updateCollege]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoaded, state.college.lastDailyCheck, state.dailyBounties.date, updateState, updateCollege]);
 
     const completeBounty = useCallback((id: string) => {
         setState(prev => {

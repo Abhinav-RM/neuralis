@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { motion } from 'framer-motion';
-import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, BrainCircuit } from 'lucide-react';
+import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { Button } from '../ui/Button';
 import clsx from 'clsx';
 import { getDateKey } from '../../utils/helpers';
 import { sound } from '../../utils/sound';
 import { AttendanceRecord } from '../../types';
-import { MiniQuiz } from './MiniQuiz';
 
 const getGreeting = (time: Date, userName?: string) => {
     const hrs = time.getHours();
@@ -219,8 +218,65 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
     );
 };
 
+const THEME_PRESETS = [
+    {
+        name: "Default Blue-Noir",
+        accentColor: "#3b82f6",
+        gradientStart: "#0a0a0c",
+        gradientMiddle: "#0e131f",
+        gradientEnd: "#0a0a0c",
+        fontStyle: "default",
+        blur: 10
+    },
+    {
+        name: "Neon Cyberpunk",
+        accentColor: "#ff007f",
+        gradientStart: "#050014",
+        gradientMiddle: "#1f002a",
+        gradientEnd: "#050014",
+        fontStyle: "cyber",
+        blur: 15
+    },
+    {
+        name: "Emerald Forest",
+        accentColor: "#10b981",
+        gradientStart: "#020f08",
+        gradientMiddle: "#052011",
+        gradientEnd: "#020f08",
+        fontStyle: "clean",
+        blur: 8
+    },
+    {
+        name: "Sunset Gold",
+        accentColor: "#fbbf24",
+        gradientStart: "#0f0c02",
+        gradientMiddle: "#231b05",
+        gradientEnd: "#0f0c02",
+        fontStyle: "elegant",
+        blur: 12
+    },
+    {
+        name: "Royal Amethyst",
+        accentColor: "#9d4edd",
+        gradientStart: "#0a0a0a",
+        gradientMiddle: "#1a0033",
+        gradientEnd: "#0a0a0a",
+        fontStyle: "default",
+        blur: 10
+    },
+    {
+        name: "Monochrome Slate",
+        accentColor: "#ffffff",
+        gradientStart: "#000000",
+        gradientMiddle: "#1c1c1e",
+        gradientEnd: "#000000",
+        fontStyle: "clean",
+        blur: 5
+    }
+];
+
 export const StudentDashboard: React.FC = () => {
-    const { state, updateState, updateCollege, resetAll } = useApp();
+    const { state, updateState, updateFootball, updateCollege, resetAll } = useApp();
     const { college } = state;
     const { assignments, exams, timetable, attendanceHistory, remarks, dailyFlags } = college;
 
@@ -242,21 +298,45 @@ export const StudentDashboard: React.FC = () => {
     const [newCustomNotif, setNewCustomNotif] = useState({ message: '', time: '09:00', repeats: 'once' as any, days: [] as number[] });
     const [showAddCustomNotif, setShowAddCustomNotif] = useState(false);
     const [isSettingsNotificationsCollapsed, setIsSettingsNotificationsCollapsed] = useState(true);
+    const [isCustomizationCollapsed, setIsCustomizationCollapsed] = useState(false);
+    const [customPresetsOpen, setCustomPresetsOpen] = useState(true);
+    const [customColorsOpen, setCustomColorsOpen] = useState(true);
+    const [customFontsOpen, setCustomFontsOpen] = useState(true);
+    const [customBgOpen, setCustomBgOpen] = useState(true);
 
-    type Tab = 'overview' | 'attendance' | 'timetable' | 'tasks' | 'settings' | 'notifications' | 'quiz';
+    type Tab = 'overview' | 'attendance' | 'timetable' | 'tasks' | 'settings' | 'notifications';
     const SECTIONS: { id: Tab; label: string; icon: React.ElementType }[] = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'attendance', label: 'Attendance', icon: GraduationCap },
         { id: 'timetable', label: 'Timetable', icon: Calendar },
         { id: 'tasks', label: 'Tasks & Exams', icon: CheckSquare },
-        { id: 'quiz', label: 'Mini Quiz', icon: BrainCircuit },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'settings', label: 'Settings', icon: SettingsIcon },
     ];
 
     useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
+        let timer: ReturnType<typeof setInterval> | null = null;
+
+        const startTimer = () => {
+            if (timer) clearInterval(timer);
+            setCurrentTime(new Date()); // Refresh immediately on visibility
+            timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        };
+
+        const stopTimer = () => {
+            if (timer) { clearInterval(timer); timer = null; }
+        };
+
+        const handleVisibility = () => {
+            if (document.hidden) stopTimer(); else startTimer();
+        };
+
+        startTimer();
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            stopTimer();
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, []);
 
     const currentDay = currentTime.getDay(); // 0-6
@@ -502,8 +582,128 @@ export const StudentDashboard: React.FC = () => {
 
     const todayRecord = attendanceHistory[getDateKey(new Date())];
 
+    const { accentColor, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.football.customization;
+
+    useEffect(() => {
+        const root = document.documentElement;
+        root.style.setProperty('--accent-color', accentColor);
+        root.style.setProperty('--accent-light', accentColor);
+        root.style.setProperty('--accent-dark', accentColor);
+        root.style.setProperty('--bg-blur', `${blur}px`);
+
+        // Persistent accent color stylesheet — only updated when accentColor changes
+        // This replaces the old <style dangerouslySetInnerHTML> which re-parsed CSS on every render
+        const STYLE_ID = 'neuralis-accent-overrides';
+        let styleEl = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = STYLE_ID;
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = `
+            .text-blue-400 { color: ${accentColor} !important; }
+            .bg-blue-500 { background-color: ${accentColor} !important; }
+            .bg-blue-500\/20 { background-color: ${accentColor}33 !important; }
+            .bg-blue-500\/10 { background-color: ${accentColor}1a !important; }
+            .border-blue-500 { border-color: ${accentColor} !important; }
+            .border-blue-500\/20 { border-color: ${accentColor}33 !important; }
+            .border-blue-500\/30 { border-color: ${accentColor}4d !important; }
+            .focus\\:border-blue-500:focus { border-color: ${accentColor} !important; }
+            .hover\\:bg-blue-600:hover { background-color: ${accentColor}cc !important; }
+            .accent-blue-500 { accent-color: ${accentColor} !important; }
+        `;
+
+        // Resolve logo, greetings, body fonts
+        let activeLogoFont = logoFont;
+        let activeGreetingsFont = greetingsFont;
+        let activeBodyFont = bodyFont;
+
+        if (!activeLogoFont || !activeGreetingsFont || !activeBodyFont) {
+            if (fontStyle === 'cyber') {
+                activeLogoFont = activeLogoFont || 'mono';
+                activeGreetingsFont = activeGreetingsFont || 'orbitron';
+                activeBodyFont = activeBodyFont || 'rajdhani';
+            } else if (fontStyle === 'clean') {
+                activeLogoFont = activeLogoFont || 'grotesk';
+                activeGreetingsFont = activeGreetingsFont || 'grotesk';
+                activeBodyFont = activeBodyFont || 'archivo';
+            } else if (fontStyle === 'playful') {
+                activeLogoFont = activeLogoFont || 'fascinate';
+                activeGreetingsFont = activeGreetingsFont || 'fascinate';
+                activeBodyFont = activeBodyFont || 'honk';
+            } else if (fontStyle === 'elegant') {
+                activeLogoFont = activeLogoFont || 'cinzel-dec';
+                activeGreetingsFont = activeGreetingsFont || 'cinzel';
+                activeBodyFont = activeBodyFont || 'lora';
+            } else {
+                activeLogoFont = activeLogoFont || 'sekuya';
+                activeGreetingsFont = activeGreetingsFont || 'outfit';
+                activeBodyFont = activeBodyFont || 'jakarta';
+            }
+        }
+
+        // Set Logo Font Variable
+        let logoCSS = '"Sekuya", sans-serif';
+        if (activeLogoFont === 'mono') logoCSS = '"Share Tech Mono", monospace';
+        else if (activeLogoFont === 'grotesk') logoCSS = '"Space Grotesk", sans-serif';
+        else if (activeLogoFont === 'fascinate') logoCSS = '"Fascinate Inline", cursive';
+        else if (activeLogoFont === 'cinzel-dec') logoCSS = '"Cinzel Decorative", serif';
+        else if (activeLogoFont === 'orbitron') logoCSS = '"Orbitron", sans-serif';
+
+        // Set Greetings Font Variable
+        let greetingsCSS = '"Outfit", sans-serif';
+        if (activeGreetingsFont === 'orbitron') greetingsCSS = '"Orbitron", sans-serif';
+        else if (activeGreetingsFont === 'grotesk') greetingsCSS = '"Space Grotesk", sans-serif';
+        else if (activeGreetingsFont === 'fascinate') greetingsCSS = '"Fascinate Inline", cursive';
+        else if (activeGreetingsFont === 'cinzel') greetingsCSS = '"Cinzel", serif';
+        else if (activeGreetingsFont === 'rajdhani') greetingsCSS = '"Rajdhani", sans-serif';
+
+        // Set Body Font Variable
+        let bodyCSS = '"Plus Jakarta Sans", sans-serif';
+        if (activeBodyFont === 'rajdhani') bodyCSS = '"Rajdhani", sans-serif';
+        else if (activeBodyFont === 'archivo') bodyCSS = '"Archivo", sans-serif';
+        else if (activeBodyFont === 'grotesk') bodyCSS = '"Space Grotesk", sans-serif';
+        else if (activeBodyFont === 'honk') bodyCSS = '"Honk", cursive';
+        else if (activeBodyFont === 'lora') bodyCSS = '"Lora", serif';
+
+        root.style.setProperty('--font-display', logoCSS);
+        root.style.setProperty('--font-logo', logoCSS);
+        root.style.setProperty('--font-heading', greetingsCSS);
+        root.style.setProperty('--font-greetings', greetingsCSS);
+        root.style.setProperty('--font-body', bodyCSS);
+    }, [accentColor, blur, fontStyle, logoFont, greetingsFont, bodyFont]);
+
+    const bgStyle: React.CSSProperties = !backgroundImage
+        ? {
+            backgroundImage: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientMiddle} 50%, ${gradientEnd} 100%)`,
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+          }
+        : {
+            backgroundColor: '#0a0a0c'
+          };
+
     return (
-        <div className="min-h-screen bg-[#0a0a0c] text-white font-sans selection:bg-blue-500/30 flex">
+        <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 flex relative overflow-hidden" style={bgStyle}>
+            {/* Visual Overlays */}
+            <div className="absolute inset-0 bg-black/45 -z-10" />
+            <div className="fixed inset-0 pointer-events-none z-[10] opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
+            <div className="fixed inset-0 pointer-events-none z-[10] opacity-40 bg-[radial-gradient(circle_at_center,_transparent_60%,_black_100%)]" />
+
+            {backgroundImage && (
+                <div 
+                    className="absolute inset-0 -z-20 transition-all duration-300"
+                    style={{
+                        backgroundImage: `url(${backgroundImage})`,
+                        backgroundSize: `${bgZoom}%`,
+                        backgroundPosition: `${bgX}% ${bgY}%`,
+                        filter: `blur(${blur}px)`,
+                        transform: 'scale(1.05)'
+                    }}
+                />
+            )}
+
+
             {/* Sidebar Overlay */}
             {sidebarOpen && (
                 <div 
@@ -519,7 +719,7 @@ export const StudentDashboard: React.FC = () => {
             )}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
                     <div>
-                        <h2 className="font-sans font-bold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-white">
+                        <h2 className="font-logo font-bold text-lg tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-accent to-white uppercase">
                             NEURALIS
                         </h2>
                         <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
@@ -553,21 +753,15 @@ export const StudentDashboard: React.FC = () => {
                         );
                     })}
                 </nav>
-                <div className="p-4 border-t border-white/10">
-                    <button onClick={handleReset} className="flex items-center space-x-3 w-full p-3 rounded-xl transition-all duration-200 text-amber-400 hover:bg-amber-500/10">
-                        <LogOut size={20} />
-                        <span className="font-medium">Reset Profile</span>
-                    </button>
-                </div>
             </div>
 
             {/* Main Content Area */}
             <div className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full">
                 {/* Mobile Header */}
-                <header className="lg:hidden px-6 py-4 border-b border-white/5 bg-[#0a0a0c] sticky top-0 z-30 flex items-center justify-between">
+                <header className="lg:hidden px-6 py-4 bg-transparent sticky top-0 z-30 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu size={24}/></button>
-                        <h1 className="text-xl font-sans font-bold tracking-tight">
+                        <h1 className="text-xl font-greetings font-bold tracking-tight text-white">
                             {getGreeting(currentTime, state.userName)}
                         </h1>
                     </div>
@@ -575,10 +769,10 @@ export const StudentDashboard: React.FC = () => {
                 </header>
 
                 {/* Desktop Header */}
-                <header className="hidden lg:block px-8 py-8 border-b border-white/5 bg-[#0a0a0c] sticky top-0 z-20">
+                <header className="hidden lg:block px-8 py-8 bg-transparent sticky top-0 z-20">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-sans font-bold tracking-tight">{getGreeting(currentTime, state.userName)}</h1>
+                            <h1 className="text-2xl font-greetings font-bold tracking-tight text-white">{getGreeting(currentTime, state.userName)}</h1>
                             <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
                         </div>
                         <div className="text-right">
@@ -599,9 +793,7 @@ export const StudentDashboard: React.FC = () => {
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-blue-500/20 text-blue-400 rounded-lg">
-                                            <GraduationCap size={20} />
-                                        </div>
+                                        <GraduationCap size={20} className="text-blue-400" />
                                         <span className="text-sm text-gray-400">Attendance</span>
                                     </div>
                                     <div className="text-2xl font-bold">{percentage.toFixed(2)}%</div>
@@ -610,9 +802,7 @@ export const StudentDashboard: React.FC = () => {
 
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg">
-                                            <Clock size={20} />
-                                        </div>
+                                        <Clock size={20} className="text-purple-400" />
                                         <span className="text-sm text-gray-400">Classes Today</span>
                                     </div>
                                     <div className="text-2xl font-bold">{classesList.length}</div>
@@ -621,9 +811,7 @@ export const StudentDashboard: React.FC = () => {
 
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg">
-                                            <CheckSquare size={20} />
-                                        </div>
+                                        <CheckSquare size={20} className="text-amber-400" />
                                         <span className="text-sm text-gray-400">Assignments</span>
                                     </div>
                                     <div className="text-2xl font-bold">{pendingAssignments.length}</div>
@@ -632,9 +820,7 @@ export const StudentDashboard: React.FC = () => {
 
                                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-white/5 border border-white/10 rounded-2xl p-4">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <div className="p-2 bg-rose-500/20 text-rose-400 rounded-lg">
-                                            <BookOpen size={20} />
-                                        </div>
+                                        <BookOpen size={20} className="text-rose-400" />
                                         <span className="text-sm text-gray-400">Exams</span>
                                     </div>
                                     <div className="text-2xl font-bold">{upcomingExams.length}</div>
@@ -1492,11 +1678,6 @@ export const StudentDashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {activeSection === 'quiz' && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <MiniQuiz />
-                        </motion.div>
-                    )}
 
                     {activeSection === 'settings' && (
                         <div className="space-y-8 max-w-2xl">
@@ -1569,6 +1750,451 @@ export const StudentDashboard: React.FC = () => {
                             
                             {/* Notifications Setting in Settings - Removed as we have a dedicated tab */}
                             
+                            {/* Customization Settings */}
+                            {/* Customization Settings */}
+                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6">
+                                <button
+                                    onClick={() => {
+                                        setIsCustomizationCollapsed(!isCustomizationCollapsed);
+                                        sound.playClick();
+                                    }}
+                                    className="w-full flex items-center justify-between group"
+                                >
+                                    <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                                        <Edit2 size={20} className="text-blue-400" />
+                                        Customization Panel
+                                    </h3>
+                                    {isCustomizationCollapsed ? (
+                                        <ChevronDown size={20} className="text-gray-500 group-hover:text-white transition-colors" />
+                                    ) : (
+                                        <ChevronUp size={20} className="text-gray-500 group-hover:text-white transition-colors" />
+                                    )}
+                                </button>
+
+                                {!isCustomizationCollapsed && (
+                                    <div className="space-y-6 pt-4 border-t border-white/5">
+                                        
+                                        {/* Sub-section 1: Quick Theme Presets */}
+                                        <div className="border border-white/5 bg-white/[0.01] rounded-xl p-4 space-y-4">
+                                            <button 
+                                                onClick={() => { setCustomPresetsOpen(!customPresetsOpen); sound.playClick(); }}
+                                                className="w-full flex items-center justify-between font-bold text-xs text-gray-400 uppercase tracking-wider block"
+                                            >
+                                                <span>Quick Theme Presets</span>
+                                                {customPresetsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+
+                                            {customPresetsOpen && (
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
+                                                    {THEME_PRESETS.map((preset) => (
+                                                        <button
+                                                            key={preset.name}
+                                                            onClick={() => {
+                                                                updateFootball({
+                                                                    customization: {
+                                                                        ...state.football.customization,
+                                                                        accentColor: preset.accentColor,
+                                                                        gradientStart: preset.gradientStart,
+                                                                        gradientMiddle: preset.gradientMiddle,
+                                                                        gradientEnd: preset.gradientEnd,
+                                                                        fontStyle: preset.fontStyle,
+                                                                        blur: preset.blur,
+                                                                        logoFont: preset.fontStyle === 'cyber' ? 'mono' : preset.fontStyle === 'clean' ? 'grotesk' : preset.fontStyle === 'elegant' ? 'cinzel-dec' : preset.fontStyle === 'playful' ? 'fascinate' : 'sekuya',
+                                                                        greetingsFont: preset.fontStyle === 'cyber' ? 'orbitron' : preset.fontStyle === 'clean' ? 'grotesk' : preset.fontStyle === 'elegant' ? 'cinzel' : preset.fontStyle === 'playful' ? 'fascinate' : 'outfit',
+                                                                        bodyFont: preset.fontStyle === 'cyber' ? 'rajdhani' : preset.fontStyle === 'clean' ? 'archivo' : preset.fontStyle === 'elegant' ? 'lora' : preset.fontStyle === 'playful' ? 'honk' : 'jakarta'
+                                                                    }
+                                                                });
+                                                                sound.playSuccess();
+                                                            }}
+                                                            className="p-3 bg-black/35 hover:bg-black/50 border border-white/5 hover:border-white/20 rounded-xl flex flex-col items-center gap-2 transition-all group"
+                                                        >
+                                                            <div 
+                                                                className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center transition-transform group-hover:scale-110"
+                                                                style={{
+                                                                    background: `linear-gradient(135deg, ${preset.gradientStart} 0%, ${preset.gradientMiddle} 50%, ${preset.gradientEnd} 100%)`
+                                                                }}
+                                                            >
+                                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.accentColor }} />
+                                                            </div>
+                                                            <span className="text-xs font-semibold text-gray-300 group-hover:text-white text-center">{preset.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Sub-section 2: Color Styling */}
+                                        <div className="border border-white/5 bg-white/[0.01] rounded-xl p-4 space-y-4">
+                                            <button 
+                                                onClick={() => { setCustomColorsOpen(!customColorsOpen); sound.playClick(); }}
+                                                className="w-full flex items-center justify-between font-bold text-xs text-gray-400 uppercase tracking-wider block"
+                                            >
+                                                <span>Theme Colors</span>
+                                                {customColorsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+
+                                            {customColorsOpen && (
+                                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                                    <div>
+                                                        <label className="text-xs font-medium text-gray-400 block mb-2">Accent Theme Color</label>
+                                                        <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                                                            <input 
+                                                                type="color" 
+                                                                value={state.football.customization.accentColor} 
+                                                                onChange={(e) => {
+                                                                    updateFootball({
+                                                                        customization: {
+                                                                            ...state.football.customization,
+                                                                            accentColor: e.target.value
+                                                                        }
+                                                                    });
+                                                                }}
+                                                                className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer"
+                                                            />
+                                                            <span className="text-sm font-mono text-gray-300 uppercase">{state.football.customization.accentColor}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Sub-section 3: Granular Fonts */}
+                                        <div className="border border-white/5 bg-white/[0.01] rounded-xl p-4 space-y-4">
+                                            <button 
+                                                onClick={() => { setCustomFontsOpen(!customFontsOpen); sound.playClick(); }}
+                                                className="w-full flex items-center justify-between font-bold text-xs text-gray-400 uppercase tracking-wider block"
+                                            >
+                                                <span>Typography Settings</span>
+                                                {customFontsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+
+                                            {customFontsOpen && (
+                                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                                    
+                                                    {/* Branding / Logo Font */}
+                                                    <div>
+                                                        <label className="text-xs font-medium text-gray-400 block mb-2">Logo & Branding Font Style</label>
+                                                        <select 
+                                                            value={state.football.customization.logoFont || 'sekuya'} 
+                                                            onChange={(e) => {
+                                                                updateFootball({
+                                                                    customization: {
+                                                                        ...state.football.customization,
+                                                                        logoFont: e.target.value
+                                                                    }
+                                                                });
+                                                                sound.playClick();
+                                                            }}
+                                                            className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none"
+                                                        >
+                                                            <option value="sekuya" className="bg-[#121214] text-white" style={{ fontFamily: '"Sekuya", sans-serif' }}>Sekuya (Original Cyber)</option>
+                                                            <option value="mono" className="bg-[#121214] text-white" style={{ fontFamily: '"Share Tech Mono", monospace' }}>Share Tech Mono (Console Tech)</option>
+                                                            <option value="grotesk" className="bg-[#121214] text-white" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Space Grotesk (Modern Geometric)</option>
+                                                            <option value="fascinate" className="bg-[#121214] text-white" style={{ fontFamily: '"Fascinate Inline", cursive' }}>Fascinate Inline (Stylized Art Deco)</option>
+                                                            <option value="cinzel-dec" className="bg-[#121214] text-white" style={{ fontFamily: '"Cinzel Decorative", serif' }}>Cinzel Decorative (Classic Serif)</option>
+                                                            <option value="orbitron" className="bg-[#121214] text-white" style={{ fontFamily: '"Orbitron", sans-serif' }}>Orbitron (Futuristic Display)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Greetings / Section Headers Font */}
+                                                    <div>
+                                                        <label className="text-xs font-medium text-gray-400 block mb-2">Greetings & Section Headers Font Style</label>
+                                                        <select 
+                                                            value={state.football.customization.greetingsFont || 'outfit'} 
+                                                            onChange={(e) => {
+                                                                updateFootball({
+                                                                    customization: {
+                                                                        ...state.football.customization,
+                                                                        greetingsFont: e.target.value
+                                                                    }
+                                                                });
+                                                                sound.playClick();
+                                                            }}
+                                                            className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none"
+                                                        >
+                                                            <option value="outfit" className="bg-[#121214] text-white" style={{ fontFamily: '"Outfit", sans-serif' }}>Outfit (Elegant Geometric)</option>
+                                                            <option value="orbitron" className="bg-[#121214] text-white" style={{ fontFamily: '"Orbitron", sans-serif' }}>Orbitron (Futuristic Sci-Fi)</option>
+                                                            <option value="grotesk" className="bg-[#121214] text-white" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Space Grotesk (Symmetrical Sans)</option>
+                                                            <option value="fascinate" className="bg-[#121214] text-white" style={{ fontFamily: '"Fascinate Inline", cursive' }}>Fascinate Inline (Artistic Neon)</option>
+                                                            <option value="cinzel" className="bg-[#121214] text-white" style={{ fontFamily: '"Cinzel", serif' }}>Cinzel (Classic Roman)</option>
+                                                            <option value="rajdhani" className="bg-[#121214] text-white" style={{ fontFamily: '"Rajdhani", sans-serif' }}>Rajdhani (Technical Square)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    {/* Universal Body / Main Content Font */}
+                                                    <div>
+                                                        <label className="text-xs font-medium text-gray-400 block mb-2">Universal Body & Content Font Style</label>
+                                                        <select 
+                                                            value={state.football.customization.bodyFont || 'jakarta'} 
+                                                            onChange={(e) => {
+                                                                updateFootball({
+                                                                    customization: {
+                                                                        ...state.football.customization,
+                                                                        bodyFont: e.target.value
+                                                                    }
+                                                                });
+                                                                sound.playClick();
+                                                            }}
+                                                            className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none"
+                                                        >
+                                                            <option value="jakarta" className="bg-[#121214] text-white" style={{ fontFamily: '"Plus Jakarta Sans", sans-serif' }}>Plus Jakarta Sans (Balanced UI)</option>
+                                                            <option value="rajdhani" className="bg-[#121214] text-white" style={{ fontFamily: '"Rajdhani", sans-serif' }}>Rajdhani (Tech Compact)</option>
+                                                            <option value="archivo" className="bg-[#121214] text-white" style={{ fontFamily: '"Archivo", sans-serif' }}>Archivo (High-Legibility Grotesque)</option>
+                                                            <option value="grotesk" className="bg-[#121214] text-white" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Space Grotesk (Geometric Sans)</option>
+                                                            <option value="honk" className="bg-[#121214] text-white" style={{ fontFamily: '"Honk", cursive' }}>Honk (Playful Color Font)</option>
+                                                            <option value="lora" className="bg-[#121214] text-white" style={{ fontFamily: '"Lora", serif' }}>Lora (Sophisticated Serif)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <p className="text-[10px] text-gray-500 italic">
+                                                        Note: Preset selections will align typography dynamically. You can adjust individually as needed.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Sub-section 4: Background Visuals */}
+                                        <div className="border border-white/5 bg-white/[0.01] rounded-xl p-4 space-y-4">
+                                            <button 
+                                                onClick={() => { setCustomBgOpen(!customBgOpen); sound.playClick(); }}
+                                                className="w-full flex items-center justify-between font-bold text-xs text-gray-400 uppercase tracking-wider block"
+                                            >
+                                                <span>Background & Backdrop Styling</span>
+                                                {customBgOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            </button>
+
+                                            {customBgOpen && (
+                                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                                    
+                                                    <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                                                        <span className="text-xs text-gray-400">Default Themes:</span>
+                                                        <div className="flex gap-2">
+                                                            <button 
+                                                                onClick={() => {
+                                                                    updateFootball({
+                                                                        customization: {
+                                                                            ...state.football.customization,
+                                                                            gradientStart: '#0a0a0c',
+                                                                            gradientMiddle: '#0e131f',
+                                                                            gradientEnd: '#0a0a0c'
+                                                                        }
+                                                                    });
+                                                                    sound.playClick();
+                                                                }}
+                                                                className="px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[10px] font-bold text-blue-300 rounded-lg transition-colors uppercase tracking-wider"
+                                                            >
+                                                                Default Blue-Noir
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => {
+                                                                    updateFootball({
+                                                                        customization: {
+                                                                            ...state.football.customization,
+                                                                            gradientStart: '#000000',
+                                                                            gradientMiddle: '#000000',
+                                                                            gradientEnd: '#000000'
+                                                                        }
+                                                                    });
+                                                                    sound.playClick();
+                                                                }}
+                                                                className="px-2.5 py-1.5 bg-black/40 hover:bg-black/60 border border-white/10 text-[10px] font-bold text-gray-400 hover:text-white rounded-lg transition-colors uppercase tracking-wider"
+                                                            >
+                                                                Pure Black
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-medium text-gray-400">Set Solid Background Color</span>
+                                                            <div className="flex items-center gap-3">
+                                                                <input 
+                                                                    type="color" 
+                                                                    value={state.football.customization.gradientStart === state.football.customization.gradientEnd ? state.football.customization.gradientStart : '#0a0a0c'} 
+                                                                    onChange={(e) => {
+                                                                        const color = e.target.value;
+                                                                        updateFootball({
+                                                                            customization: {
+                                                                                ...state.football.customization,
+                                                                                gradientStart: color,
+                                                                                gradientMiddle: color,
+                                                                                gradientEnd: color
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer"
+                                                                />
+                                                                <span className="text-xs font-mono text-gray-300 uppercase">
+                                                                    {state.football.customization.gradientStart === state.football.customization.gradientEnd ? state.football.customization.gradientStart : 'Custom Gradient'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">Custom Gradient Stops (Fine Control)</span>
+                                                        <div className="grid grid-cols-3 gap-3">
+                                                            <div>
+                                                                <span className="text-[10px] text-gray-500 block mb-1">Start Color</span>
+                                                                <input 
+                                                                    type="color" 
+                                                                    value={state.football.customization.gradientStart} 
+                                                                    onChange={(e) => {
+                                                                        updateFootball({
+                                                                            customization: {
+                                                                                ...state.football.customization,
+                                                                                gradientStart: e.target.value
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    className="w-full h-10 rounded-lg bg-black/20 border border-white/5 cursor-pointer"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[10px] text-gray-500 block mb-1">Middle Color</span>
+                                                                <input 
+                                                                    type="color" 
+                                                                    value={state.football.customization.gradientMiddle} 
+                                                                    onChange={(e) => {
+                                                                        updateFootball({
+                                                                            customization: {
+                                                                                ...state.football.customization,
+                                                                                gradientMiddle: e.target.value
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    className="w-full h-10 rounded-lg bg-black/20 border border-white/5 cursor-pointer"
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-[10px] text-gray-500 block mb-1">End Color</span>
+                                                                <input 
+                                                                    type="color" 
+                                                                    value={state.football.customization.gradientEnd} 
+                                                                    onChange={(e) => {
+                                                                        updateFootball({
+                                                                            customization: {
+                                                                                ...state.football.customization,
+                                                                                gradientEnd: e.target.value
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                    className="w-full h-10 rounded-lg bg-black/20 border border-white/5 cursor-pointer"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-3 border-t border-white/5 space-y-3">
+                                                        <div>
+                                                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Background Image URL (Optional)</label>
+                                                            <input 
+                                                                type="text" 
+                                                                placeholder="https://images.unsplash.com/photo-..." 
+                                                                value={state.football.customization.backgroundImage || ''} 
+                                                                onChange={(e) => {
+                                                                    updateFootball({
+                                                                        customization: {
+                                                                            ...state.football.customization,
+                                                                            backgroundImage: e.target.value || null
+                                                                        }
+                                                                    });
+                                                                }}
+                                                                className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500"
+                                                            />
+                                                        </div>
+
+                                                        {state.football.customization.backgroundImage && (
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label className="text-[10px] text-gray-500 block mb-1">Background Blur ({state.football.customization.blur}px)</label>
+                                                                    <input 
+                                                                        type="range" 
+                                                                        min="0" 
+                                                                        max="40" 
+                                                                        value={state.football.customization.blur} 
+                                                                        onChange={(e) => {
+                                                                            updateFootball({
+                                                                                customization: {
+                                                                                    ...state.football.customization,
+                                                                                    blur: parseInt(e.target.value)
+                                                                                }
+                                                                            });
+                                                                        }}
+                                                                        className="w-full accent-blue-500"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] text-gray-500 block mb-1">Zoom ({state.football.customization.bgZoom}%)</label>
+                                                                    <input 
+                                                                        type="range" 
+                                                                        min="50" 
+                                                                        max="200" 
+                                                                        value={state.football.customization.bgZoom} 
+                                                                        onChange={(e) => {
+                                                                            updateFootball({
+                                                                                customization: {
+                                                                                    ...state.football.customization,
+                                                                                    bgZoom: parseInt(e.target.value)
+                                                                                }
+                                                                            });
+                                                                        }}
+                                                                        className="w-full accent-blue-500"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Restore Defaults */}
+                                        <div className="pt-4 border-t border-white/5 flex justify-end">
+                                            <Button 
+                                                variant="secondary" 
+                                                onClick={() => {
+                                                    updateFootball({
+                                                        customization: {
+                                                            accentColor: '#3b82f6',
+                                                            blur: 10,
+                                                            gradientStart: '#0a0a0c',
+                                                            gradientMiddle: '#0e131f',
+                                                            gradientEnd: '#0a0a0c',
+                                                            fontStyle: 'default',
+                                                            logoFont: 'sekuya',
+                                                            greetingsFont: 'outfit',
+                                                            bodyFont: 'jakarta',
+                                                            backgroundImage: null,
+                                                            bgZoom: 100,
+                                                            bgX: 50,
+                                                            bgY: 50
+                                                        }
+                                                    });
+                                                    sound.playSuccess();
+                                                }}
+                                                className="text-xs"
+                                            >
+                                                Restore to Default
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Reset Profile */}
+                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <RotateCcw size={20} className="text-amber-400" /> Reset Profile
+                                    </h3>
+                                    <Button variant="secondary" className="bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/20" onClick={handleReset}>Reset Profile</Button>
+                                </div>
+                                <p className="text-gray-400 text-sm">
+                                    Reset your onboarding profile name while preserving all your academic records.
+                                </p>
+                            </div>
+
                             {/* Danger Zone */}
                             <div className="border border-red-500/20 rounded-2xl overflow-hidden">
                                 <div className="p-6 bg-red-500/5">
@@ -1590,7 +2216,7 @@ export const StudentDashboard: React.FC = () => {
                     <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center">
                         <button onClick={() => setShowResetModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
                         <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <AlertCircle size={24} />
+                            <RotateCcw size={24} />
                         </div>
                         <h3 className="text-xl font-bold mb-2">Reset Profile?</h3>
                         <p className="text-gray-400 text-sm mb-6">Are you sure you want to reset your profile? This will ask for your name again but preserve your academic records.</p>

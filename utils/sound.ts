@@ -1,8 +1,11 @@
 class SoundEngine {
     private context: AudioContext | null = null;
     private enabled: boolean = true;
+    private initialized: boolean = false;
 
-    constructor() {
+    private initContext() {
+        if (this.initialized) return;
+        this.initialized = true;
         try {
             this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
         } catch (e) {
@@ -11,7 +14,9 @@ class SoundEngine {
     }
 
     private async ensureContext() {
-        if (!this.enabled || !this.context) return false;
+        if (!this.enabled) return false;
+        if (!this.initialized) this.initContext();
+        if (!this.context) return false;
         if (this.context.state === 'suspended') {
             await this.context.resume();
         }
@@ -42,6 +47,7 @@ class SoundEngine {
     }
 
     public playSuccess() {
+        this.initContext();
         if (!this.context) return;
         this.playTone(440, 'sine', 0.1); 
         setTimeout(() => this.playTone(554, 'sine', 0.1), 100); 
@@ -49,12 +55,14 @@ class SoundEngine {
     }
 
     public playError() {
+        this.initContext();
         if (!this.context) return;
         this.playTone(150, 'sawtooth', 0.2, 0.1);
         setTimeout(() => this.playTone(100, 'sawtooth', 0.3, 0.1), 150);
     }
 
     public playLevelUp() {
+        this.initContext();
         if (!this.context) return;
         const notes = [523.25, 659.25, 783.99, 1046.50]; 
         notes.forEach((freq, i) => {
@@ -63,12 +71,14 @@ class SoundEngine {
     }
 
     public playCoin() {
+        this.initContext();
         if (!this.context) return;
         this.playTone(1200, 'sine', 0.1, 0.1);
         setTimeout(() => this.playTone(1600, 'sine', 0.2, 0.1), 50);
     }
 
     public playRobotBlip() {
+        this.initContext();
         if (!this.context) return;
         const variance = Math.random() * 100;
         this.playTone(800 + variance, 'square', 0.03, 0.02);
@@ -112,6 +122,7 @@ class SoundEngine {
     }
 
     public playRobotConfirm() {
+        this.initContext();
         if (!this.context) return;
         this.playTone(1200, 'sine', 0.1, 0.1);
         setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.1), 80);
@@ -171,6 +182,7 @@ class SoundEngine {
     }
 
     public playMedical() {
+        this.initContext();
         if (!this.context) return;
         this.playTone(800, 'sine', 0.1, 0.1);
         setTimeout(() => this.playTone(600, 'sine', 0.3, 0.1), 100);

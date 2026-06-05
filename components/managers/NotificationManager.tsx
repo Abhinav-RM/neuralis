@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { sound } from '../../utils/sound';
 
@@ -7,6 +7,8 @@ export const NotificationManager: React.FC = () => {
     const { football, gym, college } = state;
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastScheduleRef = useRef<number>(0);
+    const [permissionDenied, setPermissionDenied] = useState(false);
+    const [dismissedWarning, setDismissedWarning] = useState(false);
 
     useEffect(() => {
         const isNative = typeof (window as any).cordova !== 'undefined' || (window as any).Capacitor?.isNativePlatform();
@@ -54,18 +56,42 @@ export const NotificationManager: React.FC = () => {
             const isNative = Capacitor?.isNativePlatform();
             
             if (isNative && Capacitor?.Plugins?.LocalNotifications) {
-                const permission = await Capacitor.Plugins.LocalNotifications.requestPermissions();
-                console.log("Capacitor Notification Permission:", permission);
+                try {
+                    const result = await Capacitor.Plugins.LocalNotifications.checkPermissions();
+                    if (result.display === 'denied') {
+                        // Already denied — don't re-request, show warning
+                        setPermissionDenied(true);
+                        return;
+                    }
+                    if (result.display !== 'granted') {
+                        const permission = await Capacitor.Plugins.LocalNotifications.requestPermissions();
+                        if (permission.display === 'denied') {
+                            setPermissionDenied(true);
+                            console.warn("Notification permission denied by user");
+                        } else {
+                            setPermissionDenied(false);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error checking notification permissions:", e);
+                }
             } else if (typeof (window as any).cordova !== 'undefined') {
                 const cordova = (window as any).cordova;
                 if (cordova.plugins?.notification?.local) {
-                    cordova.plugins.notification.local.requestPermission();
+                    cordova.plugins.notification.local.requestPermission((granted: boolean) => {
+                        if (!granted) setPermissionDenied(true);
+                    });
                 }
-            } else if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-                try {
-                    await Notification.requestPermission();
-                } catch (e) {
-                    console.error("Error requesting notification permission:", e);
+            } else if (typeof Notification !== 'undefined') {
+                if (Notification.permission === 'denied') {
+                    setPermissionDenied(true);
+                } else if (Notification.permission === 'default') {
+                    try {
+                        const result = await Notification.requestPermission();
+                        if (result === 'denied') setPermissionDenied(true);
+                    } catch (e) {
+                        console.error("Error requesting notification permission:", e);
+                    }
                 }
             }
         };
@@ -86,25 +112,54 @@ export const NotificationManager: React.FC = () => {
             const isNative = Capacitor?.isNativePlatform();
             
             // Define all triggers with base IDs
-            const triggers = [
+            const triggers: {
+                baseId: number;
+                hour: number;
+                minute: number;
+                msg: string;
+                module?: string;
+                type?: string;
+                skip: boolean;
+                repeats?: string;
+                days?: number[];
+            }[] = [
                 { baseId: 100, hour: football.reminderHour, minute: football.reminderMinute, msg: state.notificationMessages.football, module: 'football', type: 'check-in', skip: !state.enabledModules.football || !state.notificationToggles.football },
                 { baseId: 200, hour: gym.reminderHour, minute: gym.reminderMinute, msg: state.notificationMessages.gym, module: 'gym', type: 'check-in', skip: !state.enabledModules.gym || !state.notificationToggles.gym },
                 { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.books },
                 { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.idcard },
                 { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.enabledModules.college || !state.notificationToggles.homework },
                 { baseId: 600, hour: state.morningReminderHour || 8, minute: state.morningReminderMinute || 0, msg: state.notificationMessages.morning, skip: !state.notificationToggles.morning },
-                // Custom Notifications
+                // Custom Notifications — use stable IDs derived from cn.id to prevent collisions on delete
                 ...(college.customNotifications || [])
                     .filter(cn => cn.enabled)
-                    .map((cn, i) => {
+                    .map((cn) => {
                         const [h, m] = cn.time.split(':').map(Number);
-                        return { baseId: 1000 + (i * 100), hour: h, minute: m, msg: cn.message, skip: false };
+                        // Generate a stable baseId from the notification's unique ID (timestamp string)
+                        // Use modulo to keep it in a safe range, offset by 10000 to avoid collision with system IDs
+                        const stableBase = 10000 + (Math.abs(parseInt(cn.id, 10)) % 50000);
+                        return {
+                            baseId: stableBase,
+                            hour: h,
+                            minute: m,
+                            msg: cn.message,
+                            skip: false,
+                            repeats: cn.repeats || 'daily', // Default to daily for backward compat
+                            days: cn.days
+                        };
                     })
             ].filter(t => !t.skip);
 
             const allEvents: any[] = [];
+            const usedIds = new Set<number>(); // Track used IDs to prevent any collision
+
             triggers.forEach(t => {
-                for (let i = 0; i < 14; i++) {
+                // Determine how many days to schedule based on `repeats`
+                const maxDays = t.repeats === 'once' ? 1
+                    : t.repeats === 'twice' ? 2
+                    : 14; // 'daily', 'specific-days', or system notifications
+
+                let scheduled = 0;
+                for (let i = 0; i < 14 && scheduled < maxDays; i++) {
                     const target = new Date(now);
                     target.setDate(target.getDate() + i);
                     target.setHours(t.hour, t.minute, 0, 0);
@@ -114,19 +169,33 @@ export const NotificationManager: React.FC = () => {
                         continue;
                     }
 
-                    // Weekend logic for College
+                    // Weekend logic for College system notifications
                     if ([300, 400, 500].includes(t.baseId)) {
                         if (target.getDay() === 0 || target.getDay() === 6) continue;
                     }
 
+                    // Specific-days filter for custom notifications
+                    if (t.repeats === 'specific-days' && t.days && t.days.length > 0) {
+                        if (!t.days.includes(target.getDay())) continue;
+                    }
+
+                    // Generate a unique ID and ensure no collision
+                    let eventId = t.baseId + i;
+                    while (usedIds.has(eventId)) {
+                        eventId += 1;
+                    }
+                    usedIds.add(eventId);
+
                     allEvents.push({
-                        id: t.baseId + i,
+                        id: eventId,
                         time: target.getTime(),
                         targetDate: target,
                         msg: t.msg,
                         module: t.module,
                         type: t.type
                     });
+
+                    scheduled++;
                 }
             });
             
@@ -276,6 +345,78 @@ export const NotificationManager: React.FC = () => {
         state.notificationMessages,
         college.customNotifications, college.assignments, college.exams
     ]);
+
+    const openAppSettings = () => {
+        const Capacitor = (window as any).Capacitor;
+        if (Capacitor?.isNativePlatform() && Capacitor?.Plugins?.App) {
+            // Opens Android app notification settings directly
+            Capacitor.Plugins.App.openUrl({ url: 'app-settings:' });
+        }
+    };
+
+    if (permissionDenied && !dismissedWarning) {
+        return (
+            <div style={{
+                position: 'fixed',
+                bottom: 16,
+                left: 16,
+                right: 16,
+                zIndex: 9999,
+                backgroundColor: 'rgba(220, 38, 38, 0.95)',
+                backdropFilter: 'blur(12px)',
+                borderRadius: 16,
+                padding: '14px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: 'white', fontWeight: 700, fontSize: 13, margin: 0 }}>
+                        🔔 Notifications Disabled
+                    </p>
+                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, margin: '4px 0 0 0' }}>
+                        Enable notifications in settings to receive reminders.
+                    </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <button
+                        onClick={openAppSettings}
+                        style={{
+                            backgroundColor: 'white',
+                            color: '#dc2626',
+                            border: 'none',
+                            borderRadius: 8,
+                            padding: '8px 14px',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}
+                    >
+                        Settings
+                    </button>
+                    <button
+                        onClick={() => setDismissedWarning(true)}
+                        style={{
+                            backgroundColor: 'transparent',
+                            color: 'rgba(255,255,255,0.6)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: 8,
+                            padding: '8px 10px',
+                            fontSize: 11,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return null; 
 };

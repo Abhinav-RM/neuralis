@@ -107,8 +107,9 @@ export interface CustomNotification {
     time: string; // HH:mm
     enabled: boolean;
     type?: ReminderType;
+    repeats?: 'once' | 'twice' | 'daily' | 'specific-days'; // How often this notification fires
     at?: string; // Specific date for 'date'
-    days?: number[]; // Specific days for 'specific-days'
+    days?: number[]; // Specific days for 'specific-days' (0=Sun, 6=Sat)
 }
 
 // --- NEW BIO TYPES ---
@@ -174,6 +175,9 @@ export interface FootballState {
         gradientMiddle: string;
         gradientEnd: string;
         fontStyle: string;
+        logoFont?: string;
+        greetingsFont?: string;
+        bodyFont?: string;
         backgroundImage: string | null;
         bgZoom: number;
         bgX: number;

@@ -149,7 +149,24 @@ export const HologramHeart: React.FC<HologramHeartProps> = ({ className }) => {
             }
         };
 
-        const animate = () => {
+        let lastFrameTime = 0;
+        const TARGET_INTERVAL = 1000 / 30; // Cap at 30fps — heartbeat looks identical at 30fps
+
+        const animate = (timestamp: number) => {
+            // Skip frame if app is backgrounded (saves GPU on Android)
+            if (document.hidden) {
+                requestRef.current = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Frame throttle: only render at ~30fps
+            const elapsed = timestamp - lastFrameTime;
+            if (elapsed < TARGET_INTERVAL) {
+                requestRef.current = requestAnimationFrame(animate);
+                return;
+            }
+            lastFrameTime = timestamp - (elapsed % TARGET_INTERVAL);
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             const centerX = canvas.width / 2;
