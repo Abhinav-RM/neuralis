@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
-import { Bell, Clock, CheckSquare, BookOpen, Plus, Trash2 } from 'lucide-react';
+import { Bell, Clock, CheckSquare, BookOpen, Plus, Trash2, X, AlertCircle } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
 
@@ -15,6 +15,7 @@ interface NotificationsSectionProps {
 export const NotificationsSection = React.memo<NotificationsSectionProps>(({ assignments, exams, customNotifications, updateCollege }) => {
     const [showAdd, setShowAdd] = useState(false);
     const [newNotif, setNewNotif] = useState({ message: '', time: '09:00', repeats: 'once' as any, days: [] as number[] });
+    const [notifToDelete, setNotifToDelete] = useState<string | null>(null);
 
     const handleAdd = () => {
         if (!newNotif.message || !newNotif.time) return;
@@ -30,13 +31,18 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({ ass
     };
 
     const toggle = (id: string) => { updateCollege({ customNotifications: customNotifications.map(n => n.id === id ? { ...n, enabled: !n.enabled } : n) }); sound.playClick(); };
-    const remove = (id: string) => { updateCollege({ customNotifications: customNotifications.filter(n => n.id !== id) }); sound.playError(); };
+    const remove = (id: string) => { setNotifToDelete(id); sound.playClick(); };
 
     return (
         <div className="space-y-8 max-w-2xl">
-            <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Custom Notifications</h2>
-                <Button onClick={() => setShowAdd(!showAdd)} className="px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 font-bold">{showAdd ? 'Cancel' : 'Add Notification'}</Button>
+            <div className="flex items-center justify-between gap-2">
+                <h2 className="text-lg sm:text-2xl font-bold whitespace-nowrap">Custom Notifications</h2>
+                <Button 
+                    onClick={() => setShowAdd(!showAdd)} 
+                    className="px-2.5 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-sm bg-blue-500 hover:bg-blue-600 font-bold whitespace-nowrap shrink-0"
+                >
+                    {showAdd ? 'Cancel' : 'Add Notification'}
+                </Button>
             </div>
 
             {showAdd && (
@@ -143,6 +149,38 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({ ass
                     </div>
                 </section>
             </div>
+
+            {/* Delete custom notification confirmation modal */}
+            {notifToDelete && (
+                (() => {
+                    const targetNotif = customNotifications.find(n => n.id === notifToDelete);
+                    if (!targetNotif) return null;
+                    return (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                            <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center">
+                                <button onClick={() => setNotifToDelete(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
+                                <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <AlertCircle size={24} />
+                                </div>
+                                <h3 className="text-xl font-bold mb-2 text-white">Delete Notification?</h3>
+                                <p className="text-gray-400 text-sm mb-6">
+                                    Are you sure you want to delete the notification:{" "}
+                                    <span className="font-bold text-white">"{targetNotif.message}"</span> at{" "}
+                                    <span className="font-bold text-white">{targetNotif.time}</span>? This action cannot be undone.
+                                </p>
+                                <div className="flex gap-3">
+                                    <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setNotifToDelete(null)}>Cancel</Button>
+                                    <Button className="flex-1 bg-rose-500 text-white hover:bg-rose-600" onClick={() => {
+                                        updateCollege({ customNotifications: customNotifications.filter(n => n.id !== notifToDelete) });
+                                        sound.playError();
+                                        setNotifToDelete(null);
+                                    }}>Delete</Button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()
+            )}
         </div>
     );
 });

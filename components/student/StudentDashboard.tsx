@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { motion } from 'framer-motion';
-import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw, Sun, Moon, Monitor } from 'lucide-react';
+import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw, Sun, Moon, Monitor, User } from 'lucide-react';
 import { Button } from '../ui/Button';
 import clsx from 'clsx';
 import { getDateKey } from '../../utils/helpers';
@@ -177,7 +177,6 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
 
             <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] uppercase tracking-widest font-bold pt-4 border-t border-white/5">
                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div><span className="text-emerald-400">Present</span></div>
-                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-amber-500/20 border border-amber-500/40"></div><span className="text-amber-400">Leave</span></div>
                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-rose-500/20 border border-rose-500/40"></div><span className="text-rose-400">Absent</span></div>
                 <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-500/20 border border-gray-500/40"></div><span className="text-gray-400">Holiday/Weekend</span></div>
             </div>
@@ -290,7 +289,7 @@ const THEME_PRESETS = [
 ];
 
 export const StudentDashboard: React.FC = () => {
-    const { state, updateState, updateFootball, updateCollege, resetAll } = useApp();
+    const { state, updateState, updateFootball, updateCollege, resetAll, importData } = useApp();
     const { college } = state;
     const { assignments, exams, timetable, attendanceHistory, remarks, dailyFlags } = college;
 
@@ -413,12 +412,12 @@ export const StudentDashboard: React.FC = () => {
 
     const [showResetModal, setShowResetModal] = useState(false);
     const [showFactoryResetModal, setShowFactoryResetModal] = useState(false);
+    const [newName, setNewName] = useState('');
 
-    const handleReset = useCallback(() => setShowResetModal(true), []);
-    const confirmReset = useCallback(() => {
-        updateState({ userType: 'student', hasOnboarded: false, userName: '' });
-        setShowResetModal(false);
-    }, [updateState]);
+    const handleReset = useCallback(() => {
+        setNewName(state.userName);
+        setShowResetModal(true);
+    }, [state.userName]);
 
     const handleFactoryReset = useCallback(() => setShowFactoryResetModal(true), []);
     const confirmFactoryReset = useCallback(() => {
@@ -435,6 +434,28 @@ export const StudentDashboard: React.FC = () => {
             }
         });
         sound.playSuccess();
+    }, [attendanceHistory, updateCollege]);
+
+    const clearAttendance = useCallback((monthDate: Date) => {
+        const year = monthDate.getFullYear();
+        const monthStr = String(monthDate.getMonth() + 1).padStart(2, '0');
+        const prefix = `${year}-${monthStr}-`;
+        
+        const updatedHistory = { ...attendanceHistory };
+        let clearedCount = 0;
+        Object.keys(updatedHistory).forEach(key => {
+            if (key.startsWith(prefix)) {
+                delete updatedHistory[key];
+                clearedCount++;
+            }
+        });
+        
+        if (clearedCount > 0) {
+            updateCollege({
+                attendanceHistory: updatedHistory
+            });
+            sound.playError();
+        }
     }, [attendanceHistory, updateCollege]);
 
     const toggleDaily = useCallback((key: keyof typeof dailyFlags) => {
@@ -768,6 +789,7 @@ export const StudentDashboard: React.FC = () => {
                             attendanceStatus={attendanceStatus}
                             todayRecord={todayRecord}
                             markAttendance={markAttendance}
+                            clearAttendance={clearAttendance}
                             selectedMonths={selectedMonths}
                             combinedStats={combinedStats}
                             CalendarComponent={StudentCalendar}
@@ -812,6 +834,7 @@ export const StudentDashboard: React.FC = () => {
                             handleReset={handleReset}
                             handleFactoryReset={handleFactoryReset}
                             themePresets={THEME_PRESETS}
+                            importData={importData}
                         />
                     )}
                 </main>
@@ -822,14 +845,29 @@ export const StudentDashboard: React.FC = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center">
                         <button onClick={() => setShowResetModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
-                        <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <RotateCcw size={24} />
+                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <User size={24} />
                         </div>
-                        <h3 className="text-xl font-bold mb-2">Reset Profile?</h3>
-                        <p className="text-gray-400 text-sm mb-6">Are you sure you want to reset your profile? This will ask for your name again but preserve your academic records.</p>
+                        <h3 className="text-xl font-bold mb-2">Change Name</h3>
+                        <p className="text-gray-400 text-sm mb-4">Enter a new display name for your dashboard greetings.</p>
+                        
+                        <input
+                            type="text"
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="Enter your name"
+                            className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:border-blue-500 outline-none text-white text-center mb-6"
+                        />
+
                         <div className="flex gap-3">
                             <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowResetModal(false)}>Cancel</Button>
-                            <Button className="flex-1 bg-amber-500 text-white hover:bg-amber-600" onClick={confirmReset}>Confirm</Button>
+                            <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={() => {
+                                if (newName.trim()) {
+                                    updateState({ userName: newName.trim() });
+                                    setShowResetModal(false);
+                                    sound.playSuccess();
+                                }
+                            }}>Save</Button>
                         </div>
                     </div>
                 </div>

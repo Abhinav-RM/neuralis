@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import clsx from 'clsx';
-import { GraduationCap, Calendar } from 'lucide-react';
+import { GraduationCap, Calendar, X, AlertCircle } from 'lucide-react';
+import { Button } from '../../ui/Button';
+import { sound } from '../../../utils/sound';
 
 interface AttendanceSectionProps {
     percentage: number;
@@ -11,6 +13,7 @@ interface AttendanceSectionProps {
     attendanceStatus: { type: string; count: number; msg: string };
     todayRecord: { status: string } | undefined;
     markAttendance: (status: 'present' | 'absent-personal' | 'absent-college') => void;
+    clearAttendance: (d: Date) => void;
     selectedMonths: number[];
     combinedStats: { present: number; absent: number; leave: number; total: number; percentage: number };
     CalendarComponent: React.ComponentType<{ currentDate: Date; setCurrentDate: (d: Date) => void }>;
@@ -18,8 +21,9 @@ interface AttendanceSectionProps {
 
 export const AttendanceSection = React.memo<AttendanceSectionProps>(({
     percentage, effectivePresent, totalCalcDays, selectedMonthDate, setSelectedMonthDate,
-    attendanceStatus, todayRecord, markAttendance, selectedMonths, combinedStats, CalendarComponent
+    attendanceStatus, todayRecord, markAttendance, clearAttendance, selectedMonths, combinedStats, CalendarComponent
 }) => {
+    const [showClearConfirm, setShowClearConfirm] = useState(false);
     return (
         <div className="space-y-8">
             {/* Attendance Tracker */}
@@ -30,7 +34,7 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                     </h2>
                     {attendanceStatus.msg && (
                         <div className={clsx(
-                            "px-3 py-1 rounded-full text-xs font-medium border",
+                             "px-3 py-1 rounded-full text-xs font-medium border",
                             attendanceStatus.type === 'safe' 
                                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                 : "bg-rose-500/10 text-rose-400 border-rose-500/20"
@@ -101,7 +105,51 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
             </section>
 
             {/* Full Calendar */}
-            <CalendarComponent currentDate={selectedMonthDate} setCurrentDate={setSelectedMonthDate} />
+            <div className="space-y-4">
+                <CalendarComponent currentDate={selectedMonthDate} setCurrentDate={setSelectedMonthDate} />
+                
+                {/* Clear Attendance Bar */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <span className="text-xs text-gray-400 italic">
+                        Clear Attendance for current month
+                    </span>
+                    <button
+                        onClick={() => {
+                            setShowClearConfirm(true);
+                            sound.playClick();
+                        }}
+                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all"
+                    >
+                        Clear Attendance
+                    </button>
+                </div>
+
+                {/* Custom confirmation modal */}
+                {showClearConfirm && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center">
+                            <button onClick={() => setShowClearConfirm(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
+                            <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <AlertCircle size={24} />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2 text-white">Clear Month Attendance?</h3>
+                            <p className="text-gray-400 text-sm mb-6">
+                                Are you sure you want to clear all attendance records for{' '}
+                                <span className="font-bold text-white">
+                                    {selectedMonthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                </span>? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowClearConfirm(false)}>Cancel</Button>
+                                <Button className="flex-1 bg-rose-500 text-white hover:bg-rose-600" onClick={() => {
+                                    clearAttendance(selectedMonthDate);
+                                    setShowClearConfirm(false);
+                                }}>Clear Records</Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
 
             {/* Combined Attendance */}
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">

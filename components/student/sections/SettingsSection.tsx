@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
-import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
 
@@ -15,12 +15,13 @@ interface SettingsSectionProps {
     handleReset: () => void;
     handleFactoryReset: () => void;
     themePresets: any[];
+    importData: (data: any) => void;
 }
 
 export const SettingsSection = React.memo<SettingsSectionProps>(({
     state, updateState, updateFootball, updateCollege,
     monthsToRender, selectedMonths, toggleMonth,
-    handleReset, handleFactoryReset, themePresets
+    handleReset, handleFactoryReset, themePresets, importData
 }) => {
     const [isAttCollapsed, setIsAttCollapsed] = useState(true);
     const [isCustCollapsed, setIsCustCollapsed] = useState(true);
@@ -28,6 +29,77 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const [colorsOpen, setColorsOpen] = useState(true);
     const [fontsOpen, setFontsOpen] = useState(true);
     const [bgOpen, setBgOpen] = useState(true);
+
+    const [copied, setCopied] = useState(false);
+    const [importError, setImportError] = useState<string | null>(null);
+    const [pendingImportData, setPendingImportData] = useState<any | null>(null);
+    const [pastedBackup, setPastedBackup] = useState('');
+
+    const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const parsed = JSON.parse(event.target?.result as string);
+                if (parsed && typeof parsed === 'object' && 'userName' in parsed && 'hasOnboarded' in parsed) {
+                    setPendingImportData(parsed);
+                    setImportError(null);
+                } else {
+                    setImportError('Invalid backup file structure.');
+                    sound.playError();
+                }
+            } catch (err) {
+                setImportError('Failed to parse JSON backup file.');
+                sound.playError();
+            }
+        };
+        reader.readAsText(file);
+    };
+
+    const handleExport = () => {
+        try {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `neuralis_backup_${state.userName || 'user'}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            sound.playSuccess();
+        } catch (err) {
+            sound.playError();
+        }
+    };
+
+    const handleCopyBackup = () => {
+        try {
+            navigator.clipboard.writeText(JSON.stringify(state));
+            setCopied(true);
+            sound.playSuccess();
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            sound.playError();
+        }
+    };
+
+    const handlePasteImport = () => {
+        try {
+            const parsed = JSON.parse(pastedBackup);
+            if (parsed && typeof parsed === 'object' && 'userName' in parsed && 'hasOnboarded' in parsed) {
+                setPendingImportData(parsed);
+                setImportError(null);
+                setPastedBackup('');
+            } else {
+                setImportError('Invalid backup code structure.');
+                sound.playError();
+            }
+        } catch (err) {
+            setImportError('Failed to parse pasted backup code.');
+            sound.playError();
+        }
+    };
 
     const cust = state.football.customization;
 
@@ -49,9 +121,16 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
 
             {/* Combined Attendance Selection */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                <button onClick={() => setIsAttCollapsed(!isAttCollapsed)} className="w-full flex items-center justify-between mb-4 group">
-                    <h3 className="text-lg font-bold flex items-center gap-2"><GraduationCap size={20} className="text-blue-400" /> Combined Attendance Selection</h3>
-                    {isAttCollapsed ? <ChevronDown size={20} className="text-gray-500 group-hover:text-white transition-colors" /> : <ChevronUp size={20} className="text-gray-500 group-hover:text-white transition-colors" />}
+                <button onClick={() => setIsAttCollapsed(!isAttCollapsed)} className="w-full flex items-center justify-between mb-4 group gap-2">
+                    <h3 className="text-xs sm:text-lg font-bold flex items-center gap-2 text-left whitespace-nowrap overflow-hidden text-ellipsis">
+                        <GraduationCap className="text-blue-400 shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="truncate">Combined Attendance Selection</span>
+                    </h3>
+                    {isAttCollapsed ? (
+                        <ChevronDown className="text-gray-500 group-hover:text-white transition-colors shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                        <ChevronUp className="text-gray-500 group-hover:text-white transition-colors shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
                 </button>
                 {!isAttCollapsed && (<>
                     <p className="text-sm text-gray-400 mb-6">Select multiple months to see your total average attendance across your entire academic period.</p>
@@ -69,9 +148,16 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
 
             {/* Customization Panel */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6">
-                <button onClick={() => { setIsCustCollapsed(!isCustCollapsed); sound.playClick(); }} className="w-full flex items-center justify-between group">
-                    <h3 className="text-lg font-bold flex items-center gap-2 text-white"><Edit2 size={20} className="text-blue-400" /> Customization Panel</h3>
-                    {isCustCollapsed ? <ChevronDown size={20} className="text-gray-500 group-hover:text-white transition-colors" /> : <ChevronUp size={20} className="text-gray-500 group-hover:text-white transition-colors" />}
+                <button onClick={() => { setIsCustCollapsed(!isCustCollapsed); sound.playClick(); }} className="w-full flex items-center justify-between group gap-2">
+                    <h3 className="text-xs sm:text-lg font-bold flex items-center gap-2 text-left text-white whitespace-nowrap overflow-hidden text-ellipsis">
+                        <Edit2 className="text-blue-400 shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="truncate">Customization Panel</span>
+                    </h3>
+                    {isCustCollapsed ? (
+                        <ChevronDown className="text-gray-500 group-hover:text-white transition-colors shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                    ) : (
+                        <ChevronUp className="text-gray-500 group-hover:text-white transition-colors shrink-0 w-4 h-4 sm:w-5 sm:h-5" />
+                    )}
                 </button>
                 {!isCustCollapsed && (
                     <div className="space-y-6 pt-4 border-t border-white/5">
@@ -230,13 +316,85 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                 )}
             </div>
 
-            {/* Reset Profile */}
+            {/* Change Display Name */}
             <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
                 <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold flex items-center gap-2"><RotateCcw size={20} className="text-amber-400" /> Reset Profile</h3>
-                    <Button variant="secondary" className="bg-amber-500/10 text-amber-300 border-amber-500/20 hover:bg-amber-500/20" onClick={handleReset}>Reset Profile</Button>
+                    <h3 className="text-lg font-bold flex items-center gap-2"><User size={20} className="text-blue-400" /> Change Name</h3>
+                    <Button variant="secondary" className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20" onClick={handleReset}>Change Name</Button>
                 </div>
-                <p className="text-gray-400 text-sm">Reset your onboarding profile name while preserving all your academic records.</p>
+                <p className="text-gray-400 text-sm">Update your display name for dashboard greetings while preserving all your academic records.</p>
+            </div>
+
+            {/* Backup & Restore */}
+            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-6">
+                <div>
+                    <h3 className="text-lg font-bold flex items-center gap-2 mb-1"><Download size={20} className="text-emerald-400" /> Backup & Restore</h3>
+                    <p className="text-gray-400 text-sm">Export your profile data, attendance history, and settings to a JSON file, or restore a previously saved backup.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    {/* Export Card */}
+                    <div className="p-4 bg-black/30 border border-white/5 rounded-xl space-y-3">
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Export Data</h4>
+                        <p className="text-xs text-gray-500 font-medium">Save your current dashboard state, history, and customization choices.</p>
+                        <div className="flex flex-col gap-2 pt-2">
+                            <Button 
+                                onClick={handleExport} 
+                                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 text-xs"
+                            >
+                                <Download size={14} /> Export Backup File
+                            </Button>
+                            <Button 
+                                onClick={handleCopyBackup} 
+                                className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 font-semibold py-2 text-xs"
+                            >
+                                {copied ? <Check size={14} className="text-emerald-400" /> : <Edit2 size={14} />} 
+                                {copied ? "Code Copied!" : "Copy Backup Code"}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Import Card */}
+                    <div className="p-4 bg-black/30 border border-white/5 rounded-xl space-y-3">
+                        <h4 className="text-sm font-bold text-white uppercase tracking-wider">Import Data</h4>
+                        <p className="text-xs text-gray-500 font-medium font-medium">Upload a backup file or paste your backup JSON code to restore your profile.</p>
+                        <div className="flex flex-col gap-2 pt-2">
+                            <label className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 text-xs rounded-lg cursor-pointer text-center transition-colors">
+                                <Upload size={14} /> Import Backup File
+                                <input 
+                                    type="file" 
+                                    accept=".json" 
+                                    onChange={handleFileImport} 
+                                    className="hidden" 
+                                />
+                            </label>
+                            
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Or paste backup code..."
+                                    value={pastedBackup}
+                                    onChange={(e) => setPastedBackup(e.target.value)}
+                                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs focus:border-blue-500 outline-none text-white"
+                                />
+                                <Button 
+                                    onClick={handlePasteImport}
+                                    disabled={!pastedBackup.trim()}
+                                    className="bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Apply
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {importError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs flex items-center gap-2 mt-2">
+                        <AlertCircle size={14} />
+                        <span>{importError}</span>
+                    </div>
+                )}
             </div>
 
             {/* Danger Zone */}
@@ -247,6 +405,31 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                     <Button variant="danger" onClick={handleFactoryReset}>Factory Reset</Button>
                 </div>
             </div>
+
+            {/* Backup Import Confirmation Modal */}
+            {pendingImportData && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center">
+                        <button onClick={() => setPendingImportData(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
+                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Upload size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 text-white">Import Backup?</h3>
+                        <p className="text-gray-400 text-sm mb-6">
+                            This will overwrite all current settings, attendance history, and profile records with the backup for{" "}
+                            <span className="font-bold text-white">"{pendingImportData.userName || 'Unknown'}"</span>. This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setPendingImportData(null)}>Cancel</Button>
+                            <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={() => {
+                                importData(pendingImportData);
+                                setPendingImportData(null);
+                                window.location.reload();
+                            }}>Import</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 });
