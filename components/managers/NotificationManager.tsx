@@ -123,8 +123,8 @@ export const NotificationManager: React.FC = () => {
                 repeats?: string;
                 days?: number[];
             }[] = [
-                { baseId: 100, hour: football.reminderHour, minute: football.reminderMinute, msg: state.notificationMessages.football, module: 'football', type: 'check-in', skip: !state.enabledModules.football || !state.notificationToggles.football },
-                { baseId: 200, hour: gym.reminderHour, minute: gym.reminderMinute, msg: state.notificationMessages.gym, module: 'gym', type: 'check-in', skip: !state.enabledModules.gym || !state.notificationToggles.gym },
+                { baseId: 100, hour: football.reminderHour, minute: football.reminderMinute, msg: state.notificationMessages.football, module: 'football', type: 'check-in', skip: true },
+                { baseId: 200, hour: gym.reminderHour, minute: gym.reminderMinute, msg: state.notificationMessages.gym, module: 'gym', type: 'check-in', skip: true },
                 { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.books },
                 { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.idcard },
                 { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.enabledModules.college || !state.notificationToggles.homework },

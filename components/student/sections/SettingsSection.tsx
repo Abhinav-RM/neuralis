@@ -23,7 +23,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     handleReset, handleFactoryReset, themePresets
 }) => {
     const [isAttCollapsed, setIsAttCollapsed] = useState(true);
-    const [isCustCollapsed, setIsCustCollapsed] = useState(false);
+    const [isCustCollapsed, setIsCustCollapsed] = useState(true);
     const [presetsOpen, setPresetsOpen] = useState(true);
     const [colorsOpen, setColorsOpen] = useState(true);
     const [fontsOpen, setFontsOpen] = useState(true);
@@ -84,10 +84,13 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
                                     {themePresets.map((preset) => (
                                         <button key={preset.name} onClick={() => {
-                                            updateFootball({ customization: { ...cust, accentColor: preset.accentColor, gradientStart: preset.gradientStart, gradientMiddle: preset.gradientMiddle, gradientEnd: preset.gradientEnd, fontStyle: preset.fontStyle, blur: preset.blur,
-                                                logoFont: preset.fontStyle === 'cyber' ? 'mono' : preset.fontStyle === 'clean' ? 'grotesk' : preset.fontStyle === 'elegant' ? 'cinzel-dec' : preset.fontStyle === 'playful' ? 'fascinate' : 'sekuya',
-                                                greetingsFont: preset.fontStyle === 'cyber' ? 'orbitron' : preset.fontStyle === 'clean' ? 'grotesk' : preset.fontStyle === 'elegant' ? 'cinzel' : preset.fontStyle === 'playful' ? 'fascinate' : 'outfit',
-                                                bodyFont: preset.fontStyle === 'cyber' ? 'rajdhani' : preset.fontStyle === 'clean' ? 'archivo' : preset.fontStyle === 'elegant' ? 'lora' : preset.fontStyle === 'playful' ? 'honk' : 'jakarta'
+                                            updateFootball({ customization: { 
+                                                ...cust, 
+                                                accentColor: preset.accentColor, 
+                                                gradientStart: preset.gradientStart, 
+                                                gradientMiddle: preset.gradientMiddle, 
+                                                gradientEnd: preset.gradientEnd, 
+                                                blur: preset.blur 
                                             }}); sound.playSuccess();
                                         }} className="p-3 bg-black/35 hover:bg-black/50 border border-white/5 hover:border-white/20 rounded-xl flex flex-col items-center gap-2 transition-all group">
                                             <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `linear-gradient(135deg, ${preset.gradientStart} 0%, ${preset.gradientMiddle} 50%, ${preset.gradientEnd} 100%)` }}>
@@ -107,10 +110,40 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                             </button>
                             {colorsOpen && (
                                 <div className="space-y-4 pt-2 border-t border-white/5">
-                                    <div><label className="text-xs font-medium text-gray-400 block mb-2">Accent Theme Color</label>
-                                        <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
-                                            <input type="color" value={cust.accentColor} onChange={(e) => updateFootball({ customization: { ...cust, accentColor: e.target.value } })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
-                                            <span className="text-sm font-mono text-gray-300 uppercase">{cust.accentColor}</span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label className="text-xs font-medium text-gray-400 block mb-2">Accent Theme Color</label>
+                                            <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                                                <input type="color" value={cust.accentColor} onChange={(e) => updateFootball({ customization: { ...cust, accentColor: e.target.value } })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
+                                                <span className="text-sm font-mono text-gray-300 uppercase">{cust.accentColor}</span>
+                                            </div>
+                                        </div>
+                                        <div><label className="text-xs font-medium text-gray-400 block mb-2">Greetings Text Color</label>
+                                            <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                                                <input type="color" value={cust.greetingsColor || '#ffffff'} onChange={(e) => updateFootball({ customization: { ...cust, greetingsColor: e.target.value } })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
+                                                <span className="text-sm font-mono text-gray-300 uppercase">{cust.greetingsColor || 'DEFAULT'}</span>
+                                                {cust.greetingsColor ? (
+                                                    <button onClick={() => { updateFootball({ customization: { ...cust, greetingsColor: '' } }); sound.playClick(); }} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase ml-auto">Reset</button>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div><label className="text-xs font-medium text-gray-400 block mb-2">Greetings Text Case (Prefix)</label>
+                                        <div className="flex gap-2 bg-black/20 p-2 rounded-xl border border-white/5">
+                                            {(['caps', 'small', 'mix'] as const).map((caseOption) => (
+                                                <button
+                                                    key={caseOption}
+                                                    type="button"
+                                                    onClick={() => { updateFootball({ customization: { ...cust, greetingsCasing: caseOption } }); sound.playClick(); }}
+                                                    className={clsx(
+                                                        "flex-1 py-2 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border",
+                                                        (cust.greetingsCasing || 'caps') === caseOption
+                                                            ? "bg-blue-500/20 border-blue-500/30 text-blue-400 font-bold shadow-[0_0_10px_rgba(59,130,246,0.15)]"
+                                                            : "bg-transparent border-transparent text-gray-400 hover:text-white"
+                                                    )}
+                                                >
+                                                    {caseOption}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>

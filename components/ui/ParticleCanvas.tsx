@@ -62,19 +62,25 @@ export const ParticleCanvas: React.FC<ParticleCanvasProps> = ({ active, color = 
                 spawnParticles(rect.width, rect.height); 
             }
 
-            const animate = () => {
+            let lastTime = performance.now();
+
+            const animate = (timestamp: number) => {
                 if (!ctx || particles.current.length === 0) return;
+                
+                const deltaMs = timestamp - lastTime;
+                lastTime = timestamp;
+                const dt = Math.max(0.1, Math.min(3.0, deltaMs / 16.667));
                 
                 // Clear using logical coords
                 ctx.clearRect(0, 0, canvas.width / dpr, canvas.height / dpr);
                 const height = canvas.height / dpr;
                 
-                particles.current.forEach((p, i) => {
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vy += 0.15; // Gravity
-                    p.life -= 0.02; // Decay
-                    p.size *= 0.95; // Shrink
+                particles.current.forEach((p) => {
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+                    p.vy += 0.15 * dt; // Gravity
+                    p.life -= 0.02 * dt; // Decay
+                    p.size *= Math.pow(0.95, dt); // Shrink
 
                     ctx.globalAlpha = Math.max(0, p.life);
                     ctx.fillStyle = p.color;
@@ -97,7 +103,8 @@ export const ParticleCanvas: React.FC<ParticleCanvasProps> = ({ active, color = 
             };
 
             cancelAnimationFrame(animationId.current);
-            animate();
+            lastTime = performance.now();
+            animationId.current = requestAnimationFrame(animate);
         }
 
         return () => cancelAnimationFrame(animationId.current);

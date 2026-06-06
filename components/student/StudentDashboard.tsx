@@ -14,7 +14,7 @@ import { TasksSection } from './sections/TasksSection';
 import { NotificationsSection } from './sections/NotificationsSection';
 import { SettingsSection } from './sections/SettingsSection';
 
-const getGreeting = (time: Date, userName?: string) => {
+const getGreeting = (time: Date, userName?: string, casing?: 'caps' | 'small' | 'mix') => {
     const hrs = time.getHours();
     let greet = 'Good evening';
     if (hrs >= 5 && hrs < 12) {
@@ -22,6 +22,14 @@ const getGreeting = (time: Date, userName?: string) => {
     } else if (hrs >= 12 && hrs < 17) {
         greet = 'Good afternoon';
     }
+
+    const activeCasing = casing || 'caps';
+    if (activeCasing === 'caps') {
+        greet = greet.toUpperCase();
+    } else if (activeCasing === 'small') {
+        greet = greet.toLowerCase();
+    }
+
     return userName ? `${greet}, ${userName}` : greet;
 };
 
@@ -291,6 +299,29 @@ export const StudentDashboard: React.FC = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [selectedMonthDate, setSelectedMonthDate] = useState(new Date());
 
+    const [isLight, setIsLight] = useState(false);
+
+    useEffect(() => {
+        const checkTheme = () => {
+            const currentTheme = state.theme || 'system';
+            if (currentTheme === 'system') {
+                setIsLight(!window.matchMedia('(prefers-color-scheme: dark)').matches);
+            } else {
+                setIsLight(currentTheme === 'light');
+            }
+        };
+        checkTheme();
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const listener = () => {
+            if ((state.theme || 'system') === 'system') {
+                checkTheme();
+            }
+        };
+        mediaQuery.addEventListener('change', listener);
+        return () => mediaQuery.removeEventListener('change', listener);
+    }, [state.theme]);
+
     type Tab = 'overview' | 'attendance' | 'timetable' | 'tasks' | 'settings' | 'notifications';
     const SECTIONS: { id: Tab; label: string; icon: React.ElementType }[] = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
@@ -492,7 +523,7 @@ export const StudentDashboard: React.FC = () => {
         );
     };
 
-    const { accentColor, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.football.customization;
+    const { accentColor, greetingsColor, greetingsCasing, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.football.customization;
 
     useEffect(() => {
         const root = document.documentElement;
@@ -583,7 +614,13 @@ export const StudentDashboard: React.FC = () => {
         root.style.setProperty('--font-body', bodyCSS);
     }, [accentColor, blur, fontStyle, logoFont, greetingsFont, bodyFont]);
 
-    const bgStyle: React.CSSProperties = !backgroundImage
+    const bgStyle: React.CSSProperties = isLight
+        ? {
+            backgroundImage: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%)',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+          }
+        : !backgroundImage
         ? {
             backgroundImage: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientMiddle} 50%, ${gradientEnd} 100%)`,
             backgroundRepeat: 'no-repeat',
@@ -596,9 +633,11 @@ export const StudentDashboard: React.FC = () => {
     return (
         <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 flex relative overflow-hidden" style={bgStyle}>
             {/* Visual Overlays */}
-            <div className="absolute inset-0 bg-black/45 -z-10" />
+            <div className={clsx("absolute inset-0 -z-10 transition-colors duration-300", isLight ? "hidden" : "bg-black/45")} />
             <div className="fixed inset-0 pointer-events-none z-[10] opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
-            <div className="fixed inset-0 pointer-events-none z-[10] opacity-40 bg-[radial-gradient(circle_at_center,_transparent_60%,_black_100%)]" />
+            {!isLight && (
+                <div className="fixed inset-0 pointer-events-none z-[10] opacity-40 bg-[radial-gradient(circle_at_center,_transparent_60%,_black_100%)]" />
+            )}
 
             {backgroundImage && (
                 <div 
@@ -671,8 +710,11 @@ export const StudentDashboard: React.FC = () => {
                 <header className="lg:hidden px-6 py-4 bg-transparent sticky top-0 z-30 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu size={24}/></button>
-                        <h1 className="text-xl font-greetings font-bold tracking-tight text-white">
-                            {getGreeting(currentTime, state.userName)}
+                        <h1 
+                            className={clsx("text-xl font-greetings font-bold tracking-tight", !greetingsColor && "text-white")}
+                            style={greetingsColor ? { color: greetingsColor } : undefined}
+                        >
+                            {getGreeting(currentTime, state.userName, greetingsCasing)}
                         </h1>
                     </div>
                     {renderThemeToggle()}
@@ -682,7 +724,12 @@ export const StudentDashboard: React.FC = () => {
                 <header className="hidden lg:block px-8 py-8 bg-transparent sticky top-0 z-20">
                     <div className="max-w-5xl mx-auto flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-greetings font-bold tracking-tight text-white">{getGreeting(currentTime, state.userName)}</h1>
+                            <h1 
+                                className={clsx("text-2xl font-greetings font-bold tracking-tight", !greetingsColor && "text-white")}
+                                style={greetingsColor ? { color: greetingsColor } : undefined}
+                            >
+                                {getGreeting(currentTime, state.userName, greetingsCasing)}
+                            </h1>
                             <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
                         </div>
                         <div className="flex items-center gap-6">

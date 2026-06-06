@@ -57,6 +57,8 @@ const INITIAL_STATE: AppState = {
         trainingPlan: DEFAULT_FOOTBALL_PLAN,
         customization: {
             accentColor: '#3b82f6',
+            greetingsColor: '',
+            greetingsCasing: 'caps',
             blur: 10,
             gradientStart: '#0a0a0c',
             gradientMiddle: '#0e131f',

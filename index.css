@@ -127,13 +127,8 @@ img {
   background-image: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%) !important;
 }
 
-.light .bg-black\/40,
-.light .bg-black\/45 {
-  background-color: rgba(255, 255, 255, 0.3) !important;
-}
-
 .light div[style*="radial-gradient"] {
-  background-image: radial-gradient(circle at center, transparent 60%, rgba(241, 245, 249, 0.5) 100%) !important;
+  background-image: radial-gradient(circle at center, transparent 60%, rgba(241, 245, 249, 0.2) 100%) !important;
 }
 
 /* Sidebar styling in light mode */
@@ -173,11 +168,16 @@ img {
 
 /* General card/panel container overrides in light mode */
 .light .bg-white\/5,
-.light .bg-black\/20,
-.light .bg-\[\#121214\],
-.light .bg-\[\#0a0a0c\],
+.light .bg-white\/10,
 .light .bg-white\/\[0\.03\],
-.light .bg-white\/10 {
+.light .bg-black\/20,
+.light .bg-black\/30,
+.light .bg-black\/35,
+.light .bg-black\/40,
+.light .bg-black\/45,
+.light .bg-black\/50,
+.light .bg-\[\#121214\],
+.light .bg-\[\#0a0a0c\] {
   background-color: rgba(255, 255, 255, 0.75) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;

@@ -170,6 +170,8 @@ export interface FootballState {
     trainingPlan: Record<number, TrainingPlanDay>;
     customization: {
         accentColor: string;
+        greetingsColor?: string;
+        greetingsCasing?: 'caps' | 'small' | 'mix';
         blur: number;
         gradientStart: string;
         gradientMiddle: string;
