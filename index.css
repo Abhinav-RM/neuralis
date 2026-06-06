@@ -107,3 +107,234 @@ img {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==========================================
+   LIGHT MODE OVERRIDES
+   ========================================== */
+.light {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Main background & overlays in light mode */
+.light .min-h-screen {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Override background style linear-gradients if background image is not active */
+.light div[style*="linear-gradient"] {
+  background-image: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #f1f5f9 100%) !important;
+}
+
+.light .bg-black\/40,
+.light .bg-black\/45 {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.light div[style*="radial-gradient"] {
+  background-image: radial-gradient(circle at center, transparent 60%, rgba(241, 245, 249, 0.5) 100%) !important;
+}
+
+/* Sidebar styling in light mode */
+.light .bg-black\/95 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-right-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+}
+
+.light .bg-black\/95 h2,
+.light .bg-black\/95 span,
+.light .bg-black\/95 p,
+.light .bg-black\/95 button,
+.light .bg-black\/95 svg {
+  color: #0f172a !important;
+}
+
+.light .bg-black\/95 .text-gray-400 {
+  color: #475569 !important;
+}
+
+.light .bg-black\/95 .text-gray-500 {
+  color: #64748b !important;
+}
+
+.light .bg-black\/95 button.text-gray-400:hover,
+.light .bg-black\/95 button:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: #000000 !important;
+}
+
+/* Active navigation item in light mode */
+.light .bg-blue-500\/20 {
+  background-color: rgba(59, 130, 246, 0.12) !important;
+  color: #1d4ed8 !important;
+}
+
+/* General card/panel container overrides in light mode */
+.light .bg-white\/5,
+.light .bg-black\/20,
+.light .bg-\[\#121214\],
+.light .bg-\[\#0a0a0c\],
+.light .bg-white\/\[0\.03\],
+.light .bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 8px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Light theme borders */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-white\/20,
+.light .border-white\/30,
+.light .border-white\/40 {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Accent texts */
+.light .text-blue-400 {
+  color: #2563eb !important;
+}
+
+.light .text-white {
+  color: #0f172a !important;
+}
+
+.light .text-gray-400 {
+  color: #475569 !important;
+}
+
+.light .text-gray-500 {
+  color: #64748b !important;
+}
+
+.light .text-gray-300 {
+  color: #334155 !important;
+}
+
+.light .text-gray-200 {
+  color: #1e293b !important;
+}
+
+/* Hover effects */
+.light .hover\:bg-white\/5:hover,
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Calendar month navigators */
+.light .bg-white\/5 button {
+  color: #0f172a !important;
+}
+
+/* Standard buttons in light mode */
+.light button.bg-blue-500 {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.light button.bg-blue-500:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.light button.bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  color: #0f172a !important;
+}
+
+.light button.bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Inputs, Select dropdowns, Textareas */
+.light input,
+.light select,
+.light textarea {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+}
+
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Checkbox toggle controls */
+.light button.bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.light button.bg-blue-500 {
+  background-color: #2563eb !important;
+}
+
+/* Badges and tags */
+.light .bg-blue-500\/10 {
+  background-color: rgba(37, 99, 235, 0.1) !important;
+  color: #1d4ed8 !important;
+}
+
+.light .bg-emerald-500\/20 {
+  background-color: rgba(16, 185, 129, 0.1) !important;
+  color: #047857 !important;
+}
+
+.light .bg-amber-500\/20 {
+  background-color: rgba(245, 158, 11, 0.1) !important;
+  color: #b45309 !important;
+}
+
+.light .bg-rose-500\/20 {
+  background-color: rgba(244, 63, 94, 0.1) !important;
+  color: #be123c !important;
+}
+
+/* Calendar component specifics */
+.light .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+.light .text-emerald-400 {
+  color: #059669 !important;
+}
+
+.light .text-amber-400 {
+  color: #d97706 !important;
+}
+
+/* Modals */
+.light .fixed.inset-0.z-50 {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+.light .fixed.inset-0.z-50 > div {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.light .fixed.inset-0.z-50 h3 {
+  color: #0f172a !important;
+}
+
+.light .fixed.inset-0.z-50 p {
+  color: #475569 !important;
+}
+
+/* Custom Webkit scrollbar for light mode */
+.light ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03) !important;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+

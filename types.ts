@@ -317,4 +317,5 @@ export interface AppState {
         type: 'check-in' | 'reminder' | 'homework';
     } | null;
     lastSyncTimestamp?: number;
+    theme?: 'dark' | 'light' | 'system';
 }

@@ -38,6 +38,44 @@ const AppContent: React.FC = () => {
         }
     }, [state.userType, updateState]);
 
+    // Theme management
+    useEffect(() => {
+        const root = document.documentElement;
+        const updateTheme = () => {
+            const currentTheme = state.theme || 'system';
+            let isDark = true;
+            if (currentTheme === 'system') {
+                isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            } else {
+                isDark = currentTheme === 'dark';
+            }
+
+            if (isDark) {
+                root.classList.add('dark');
+                root.classList.remove('light');
+                root.style.colorScheme = 'dark';
+            } else {
+                root.classList.add('light');
+                root.classList.remove('dark');
+                root.style.colorScheme = 'light';
+            }
+        };
+
+        updateTheme();
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleSystemThemeChange = () => {
+            if ((state.theme || 'system') === 'system') {
+                updateTheme();
+            }
+        };
+
+        mediaQuery.addEventListener('change', handleSystemThemeChange);
+        return () => {
+            mediaQuery.removeEventListener('change', handleSystemThemeChange);
+        };
+    }, [state.theme]);
+
     if (isInitialBoot) {
         return <NeutralLoadingScreen progress={progress} />;
     }

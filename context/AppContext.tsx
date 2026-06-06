@@ -150,7 +150,8 @@ const INITIAL_STATE: AppState = {
         morning: "Morning Protocol Active. ☀️"
     },
     midnightLock: true,
-    lastSyncTimestamp: 0
+    lastSyncTimestamp: 0,
+    theme: 'system'
 };
 
 interface AppContextType {
@@ -384,6 +385,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 }
                 if (!parsed.miniQuiz) {
                     parsed.miniQuiz = INITIAL_STATE.miniQuiz;
+                }
+                if (parsed.theme === undefined) {
+                    parsed.theme = 'system';
                 }
                 setState(prev => ({ ...prev, ...parsed }));
             }
