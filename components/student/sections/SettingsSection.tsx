@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import clsx from 'clsx';
 import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check } from 'lucide-react';
 import { Button } from '../../ui/Button';
@@ -34,6 +34,44 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const [importError, setImportError] = useState<string | null>(null);
     const [pendingImportData, setPendingImportData] = useState<any | null>(null);
     const [pastedBackup, setPastedBackup] = useState('');
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [showRequestPermissionModal, setShowRequestPermissionModal] = useState(false);
+
+    const handleUploadClick = () => {
+        sound.playClick();
+        if (cust.storagePermission !== 'granted') {
+            setShowRequestPermissionModal(true);
+        } else {
+            fileInputRef.current?.click();
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            sound.playError();
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64String = event.target?.result as string;
+            updateFootball({
+                customization: {
+                    ...cust,
+                    backgroundImage: base64String
+                }
+            });
+            sound.playSuccess();
+        };
+        reader.onerror = () => {
+            sound.playError();
+        };
+        reader.readAsDataURL(file);
+    };
 
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -292,14 +330,100 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                         </div>
                                     </div>
                                     <div className="pt-3 border-t border-white/5 space-y-3">
-                                        <div><label className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">Background Image URL (Optional)</label>
-                                            <input type="text" placeholder="https://images.unsplash.com/photo-..." value={cust.backgroundImage || ''} onChange={(e) => updateFootball({ customization: { ...cust, backgroundImage: e.target.value || null } })} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500" /></div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-2">Background Image</label>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <input 
+                                                    type="file" 
+                                                    ref={fileInputRef} 
+                                                    accept="image/*" 
+                                                    onChange={handleImageUpload} 
+                                                    className="hidden" 
+                                                />
+                                                <Button 
+                                                    onClick={handleUploadClick} 
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 text-xs flex items-center gap-2 animate-fade-in"
+                                                >
+                                                    <Upload size={14} /> Select Local Photo
+                                                </Button>
+                                                {cust.backgroundImage && (
+                                                    <Button 
+                                                        variant="danger" 
+                                                        onClick={() => {
+                                                            updateFootball({ customization: { ...cust, backgroundImage: null } });
+                                                            sound.playSuccess();
+                                                        }} 
+                                                        className="py-2 px-4 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30"
+                                                    >
+                                                        Remove Image
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
                                         {cust.backgroundImage && (
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div><label className="text-[10px] text-gray-500 block mb-1">Background Blur ({cust.blur}px)</label><input type="range" min="0" max="40" value={cust.blur} onChange={(e) => updateFootball({ customization: { ...cust, blur: parseInt(e.target.value) } })} className="w-full accent-blue-500" /></div>
                                                 <div><label className="text-[10px] text-gray-500 block mb-1">Zoom ({cust.bgZoom}%)</label><input type="range" min="50" max="200" value={cust.bgZoom} onChange={(e) => updateFootball({ customization: { ...cust, bgZoom: parseInt(e.target.value) } })} className="w-full accent-blue-500" /></div>
                                             </div>
                                         )}
+                                    </div>
+
+                                    {/* App Feedback (Sound & Vibration) */}
+                                    <div className="pt-3 border-t border-white/5 space-y-3">
+                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block">App Tones & Haptics</span>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {/* Sound toggle */}
+                                            <div className="flex items-center justify-between p-3 bg-black/20 border border-white/5 rounded-xl">
+                                                <div>
+                                                    <span className="text-xs font-bold text-white block">Click Sounds</span>
+                                                    <span className="text-[10px] text-gray-500">Play feedback sound effects</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        const newVal = cust.soundEnabled === false;
+                                                        updateFootball({ customization: { ...cust, soundEnabled: newVal } });
+                                                        if (newVal) {
+                                                            setTimeout(() => sound.playClick(), 50);
+                                                        }
+                                                    }}
+                                                    className={clsx(
+                                                        "w-10 h-6 rounded-full p-1 transition-colors duration-200 outline-none flex items-center",
+                                                        cust.soundEnabled !== false ? "bg-blue-600" : "bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={clsx(
+                                                        "bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200",
+                                                        cust.soundEnabled !== false ? "translate-x-4" : "translate-x-0"
+                                                    )} />
+                                                </button>
+                                            </div>
+
+                                            {/* Vibration toggle */}
+                                            <div className="flex items-center justify-between p-3 bg-black/20 border border-white/5 rounded-xl">
+                                                <div>
+                                                    <span className="text-xs font-bold text-white block">Vibration / Haptics</span>
+                                                    <span className="text-[10px] text-gray-500">Vibrate device on interactions</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        const newVal = cust.vibrationEnabled === false;
+                                                        updateFootball({ customization: { ...cust, vibrationEnabled: newVal } });
+                                                        if (newVal && navigator.vibrate) {
+                                                            try { navigator.vibrate(20); } catch (e) {}
+                                                        }
+                                                    }}
+                                                    className={clsx(
+                                                        "w-10 h-6 rounded-full p-1 transition-colors duration-200 outline-none flex items-center",
+                                                        cust.vibrationEnabled !== false ? "bg-blue-600" : "bg-white/10"
+                                                    )}
+                                                >
+                                                    <div className={clsx(
+                                                        "bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200",
+                                                        cust.vibrationEnabled !== false ? "translate-x-4" : "translate-x-0"
+                                                    )} />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -308,7 +432,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         {/* Restore Defaults */}
                         <div className="pt-4 border-t border-white/5 flex justify-end">
                             <Button variant="secondary" onClick={() => {
-                                updateFootball({ customization: { accentColor: '#3b82f6', blur: 10, gradientStart: '#0a0a0c', gradientMiddle: '#0e131f', gradientEnd: '#0a0a0c', fontStyle: 'default', logoFont: 'sekuya', greetingsFont: 'outfit', bodyFont: 'jakarta', backgroundImage: null, bgZoom: 100, bgX: 50, bgY: 50 } });
+                                updateFootball({ customization: { accentColor: '#3b82f6', blur: 10, gradientStart: '#0a0a0c', gradientMiddle: '#0e131f', gradientEnd: '#0a0a0c', fontStyle: 'default', logoFont: 'sekuya', greetingsFont: 'outfit', bodyFont: 'jakarta', backgroundImage: null, bgZoom: 100, bgX: 50, bgY: 50, soundEnabled: true, vibrationEnabled: true, storagePermission: cust.storagePermission || 'prompt' } });
                                 sound.playSuccess();
                             }} className="text-xs">Restore to Default</Button>
                         </div>
@@ -426,6 +550,39 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                 setPendingImportData(null);
                                 window.location.reload();
                             }}>Import</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Permission Request Modal from Settings */}
+            {showRequestPermissionModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center shadow-2xl">
+                        <button onClick={() => setShowRequestPermissionModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={20}/></button>
+                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Upload size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 text-white">Storage Access Required</h3>
+                        <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                            Neuralis requires storage access to pick custom background photos from your device. Would you like to grant permission now?
+                        </p>
+                        <div className="flex gap-3">
+                            <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowRequestPermissionModal(false)}>Cancel</Button>
+                            <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={() => {
+                                updateFootball({
+                                    customization: {
+                                        ...cust,
+                                        storagePermission: 'granted'
+                                    }
+                                });
+                                setShowRequestPermissionModal(false);
+                                sound.playSuccess();
+                                // Open file picker after state update
+                                setTimeout(() => {
+                                    fileInputRef.current?.click();
+                                }, 100);
+                            }}>Grant</Button>
                         </div>
                     </div>
                 </div>

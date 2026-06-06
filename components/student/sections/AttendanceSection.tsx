@@ -109,8 +109,8 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                 <CalendarComponent currentDate={selectedMonthDate} setCurrentDate={setSelectedMonthDate} />
                 
                 {/* Clear Attendance Bar */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-4">
-                    <span className="text-xs text-gray-400 italic">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between gap-2 overflow-hidden">
+                    <span className="text-[10px] sm:text-xs text-gray-400 italic whitespace-nowrap shrink-0">
                         Clear Attendance for current month
                     </span>
                     <button
@@ -118,7 +118,7 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                             setShowClearConfirm(true);
                             sound.playClick();
                         }}
-                        className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-xs font-semibold uppercase tracking-wider transition-all"
+                        className="px-2 py-1.5 sm:px-3 sm:py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 hover:text-rose-300 rounded-xl text-[10px] sm:text-xs font-semibold uppercase tracking-wider whitespace-nowrap shrink-0 transition-all"
                     >
                         Clear Attendance
                     </button>

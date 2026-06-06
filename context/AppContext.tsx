@@ -70,7 +70,10 @@ const INITIAL_STATE: AppState = {
             backgroundImage: null,
             bgZoom: 100,
             bgX: 50,
-            bgY: 50
+            bgY: 50,
+            soundEnabled: true,
+            vibrationEnabled: true,
+            storagePermission: 'prompt'
         },
         reminderHour: 20,
         reminderMinute: 0,
@@ -348,6 +351,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     }
                     if (parsed.football.customization.bodyFont === undefined) {
                         parsed.football.customization.bodyFont = 'jakarta';
+                    }
+                    if (parsed.football.customization.soundEnabled === undefined) {
+                        parsed.football.customization.soundEnabled = true;
+                    }
+                    if (parsed.football.customization.vibrationEnabled === undefined) {
+                        parsed.football.customization.vibrationEnabled = true;
+                    }
+                    if (parsed.football.customization.storagePermission === undefined) {
+                        parsed.football.customization.storagePermission = 'prompt';
                     }
                 }
                 if (!parsed.dailyBounties) {

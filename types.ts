@@ -184,6 +184,9 @@ export interface FootballState {
         bgZoom: number;
         bgX: number;
         bgY: number;
+        soundEnabled?: boolean;
+        vibrationEnabled?: boolean;
+        storagePermission?: 'granted' | 'denied' | 'prompt';
     };
     reminderHour: number;
     reminderMinute: number;

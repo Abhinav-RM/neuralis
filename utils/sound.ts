@@ -3,6 +3,22 @@ class SoundEngine {
     private enabled: boolean = true;
     private initialized: boolean = false;
 
+    private checkPreferences(): { sound: boolean, vibrate: boolean } {
+        try {
+            const raw = localStorage.getItem('lifeAthleteOS_v2');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                const cust = parsed?.football?.customization;
+                const sound = cust?.soundEnabled !== false;
+                const vibrate = cust?.vibrationEnabled !== false;
+                return { sound, vibrate };
+            }
+        } catch (e) {
+            // fallback
+        }
+        return { sound: true, vibrate: true };
+    }
+
     private initContext() {
         if (this.initialized) return;
         this.initialized = true;
@@ -14,6 +30,8 @@ class SoundEngine {
     }
 
     private async ensureContext() {
+        const prefs = this.checkPreferences();
+        if (!prefs.sound) return false;
         if (!this.enabled) return false;
         if (!this.initialized) this.initContext();
         if (!this.context) return false;
@@ -43,10 +61,29 @@ class SoundEngine {
     }
 
     public playClick() {
-        this.playTone(800, 'sine', 0.05, 0.05);
+        const prefs = this.checkPreferences();
+        if (prefs.vibrate) {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(15);
+                }
+            } catch (e) {}
+        }
+        if (prefs.sound) {
+            this.playTone(800, 'sine', 0.05, 0.05);
+        }
     }
 
     public playSuccess() {
+        const prefs = this.checkPreferences();
+        if (prefs.vibrate) {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate([30, 50, 30]);
+                }
+            } catch (e) {}
+        }
+        if (!prefs.sound) return;
         this.initContext();
         if (!this.context) return;
         this.playTone(440, 'sine', 0.1); 
@@ -55,6 +92,15 @@ class SoundEngine {
     }
 
     public playError() {
+        const prefs = this.checkPreferences();
+        if (prefs.vibrate) {
+            try {
+                if (navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+            } catch (e) {}
+        }
+        if (!prefs.sound) return;
         this.initContext();
         if (!this.context) return;
         this.playTone(150, 'sawtooth', 0.2, 0.1);
