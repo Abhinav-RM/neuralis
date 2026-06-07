@@ -148,37 +148,37 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const handleExport = async () => {
         try {
             const backupJson = JSON.stringify(state, null, 2);
+            const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform();
             
-            // Check if Web Share API is supported (natively supported in modern Capacitor WebViews)
-            if (navigator.share) {
-                try {
-                    // Try sharing as a file first
-                    const file = new File([backupJson], `neuralis_backup_${state.userName || 'user'}.json`, { type: 'application/json' });
-                    await navigator.share({
-                        files: [file],
-                        title: 'Neuralis Backup Data',
-                        text: 'Here is your Neuralis backup file.'
-                    });
-                    sound.playSuccess();
-                    return;
-                } catch (shareErr) {
-                    console.log("File share failed, falling back to text share", shareErr);
+            if (isNative) {
+                // Check if Web Share API is supported (natively supported in modern Capacitor WebViews)
+                if (navigator.share) {
                     try {
-                        // Fallback to sharing as text
+                        // Try sharing as a file first
+                        const file = new File([backupJson], `neuralis_backup_${state.userName || 'user'}.json`, { type: 'application/json' });
                         await navigator.share({
+                            files: [file],
                             title: 'Neuralis Backup Data',
-                            text: backupJson
+                            text: 'Here is your Neuralis backup file.'
                         });
                         sound.playSuccess();
                         return;
-                    } catch (textShareErr) {
-                        console.log("Text share also failed", textShareErr);
+                    } catch (shareErr) {
+                        console.log("File share failed, falling back to text share", shareErr);
+                        try {
+                            // Fallback to sharing as text
+                            await navigator.share({
+                                title: 'Neuralis Backup Data',
+                                text: backupJson
+                            });
+                            sound.playSuccess();
+                            return;
+                        } catch (textShareErr) {
+                            console.log("Text share also failed", textShareErr);
+                        }
                     }
                 }
-            }
 
-            const isNative = typeof (window as any).Capacitor !== 'undefined';
-            if (isNative) {
                 // Copy to clipboard as fallback and alert user
                 await navigator.clipboard.writeText(backupJson);
                 alert("Mobile Export: Due to Android WebView security restrictions, direct file downloads are disabled in the app. Your backup code has been copied to your clipboard instead! You can paste it in your notes or a text editor to save it.");
@@ -186,7 +186,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                 return;
             }
 
-            // Web browser fallback (standard anchor download)
+            // Web browser always downloads standard file directly to local Downloads folder
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupJson);
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
