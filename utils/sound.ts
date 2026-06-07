@@ -8,7 +8,7 @@ class SoundEngine {
             const raw = localStorage.getItem('lifeAthleteOS_v2');
             if (raw) {
                 const parsed = JSON.parse(raw);
-                const cust = parsed?.football?.customization;
+                const cust = parsed?.customization;
                 const sound = cust?.soundEnabled !== false;
                 const vibrate = cust?.vibrationEnabled !== false;
                 return { sound, vibrate };
@@ -254,34 +254,6 @@ class SoundEngine {
         osc.stop(now + 0.3);
     }
 
-    public async playHeartbeat() {
-        if (!(await this.ensureContext()) || !this.context) return;
-        const now = this.context.currentTime;
-        
-        // Lub
-        const osc1 = this.context.createOscillator();
-        const gain1 = this.context.createGain();
-        osc1.connect(gain1);
-        gain1.connect(this.context.destination);
-        osc1.frequency.setValueAtTime(60, now);
-        osc1.frequency.exponentialRampToValueAtTime(40, now + 0.1);
-        gain1.gain.setValueAtTime(0.5, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-        osc1.start(now);
-        osc1.stop(now + 0.1);
-
-        // Dub
-        const osc2 = this.context.createOscillator();
-        const gain2 = this.context.createGain();
-        osc2.connect(gain2);
-        gain2.connect(this.context.destination);
-        osc2.frequency.setValueAtTime(60, now + 0.2);
-        osc2.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-        gain2.gain.setValueAtTime(0.5, now + 0.2);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc2.start(now + 0.2);
-        osc2.stop(now + 0.3);
-    }
 }
 
 export const sound = new SoundEngine();

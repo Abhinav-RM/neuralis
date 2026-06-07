@@ -292,7 +292,7 @@ const THEME_PRESETS = [
 ];
 
 export const StudentDashboard: React.FC = () => {
-    const { state, updateState, updateFootball, updateCollege, resetAll, importData } = useApp();
+    const { state, updateState, updateCustomization, updateCollege, resetAll, importData } = useApp();
     const { college } = state;
     const { assignments, exams, timetable, attendanceHistory, remarks, dailyFlags } = college;
 
@@ -547,7 +547,7 @@ export const StudentDashboard: React.FC = () => {
         );
     };
 
-    const { accentColor, greetingsColor, greetingsCasing, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.football.customization;
+    const { accentColor, greetingsColor, greetingsCasing, gradientStart, gradientMiddle, gradientEnd, backgroundImage, blur, bgZoom, bgX, bgY, fontStyle, logoFont, greetingsFont, bodyFont } = state.customization;
 
     useEffect(() => {
         const root = document.documentElement;
@@ -832,7 +832,7 @@ export const StudentDashboard: React.FC = () => {
                         <SettingsSection
                             state={state}
                             updateState={updateState}
-                            updateFootball={updateFootball}
+                             updateCustomization={updateCustomization}
                             updateCollege={updateCollege}
                             monthsToRender={monthsToRender}
                             selectedMonths={selectedMonths}

@@ -4,7 +4,7 @@ import { sound } from '../../utils/sound';
 
 export const NotificationManager: React.FC = () => {
     const { state, setPendingAction, updateState } = useApp();
-    const { football, gym, college } = state;
+    const { college } = state;
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastScheduleRef = useRef<number>(0);
     const [permissionDenied, setPermissionDenied] = useState(false);
@@ -123,11 +123,9 @@ export const NotificationManager: React.FC = () => {
                 repeats?: string;
                 days?: number[];
             }[] = [
-                { baseId: 100, hour: football.reminderHour, minute: football.reminderMinute, msg: state.notificationMessages.football, module: 'football', type: 'check-in', skip: true },
-                { baseId: 200, hour: gym.reminderHour, minute: gym.reminderMinute, msg: state.notificationMessages.gym, module: 'gym', type: 'check-in', skip: true },
-                { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.books },
-                { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.enabledModules.college || !state.notificationToggles.idcard },
-                { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.enabledModules.college || !state.notificationToggles.homework },
+                { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.notificationToggles.books },
+                { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.notificationToggles.idcard },
+                { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.notificationToggles.homework },
                 { baseId: 600, hour: state.morningReminderHour || 8, minute: state.morningReminderMinute || 0, msg: state.notificationMessages.morning, skip: !state.notificationToggles.morning },
                 // Custom Notifications — use stable IDs derived from cn.id to prevent collisions on delete
                 ...(college.customNotifications || [])
@@ -336,8 +334,6 @@ export const NotificationManager: React.FC = () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, [
-        football.reminderHour, football.reminderMinute,
-        gym.reminderHour, gym.reminderMinute,
         college.booksReminderHour, college.booksReminderMinute,
         college.idReminderHour, college.idReminderMinute,
         college.homeworkReminderHour, college.homeworkReminderMinute,

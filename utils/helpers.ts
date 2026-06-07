@@ -12,8 +12,3 @@ export const isDateInactive = (date: Date, startDateStr: string | null): boolean
     const dateKey = getDateKey(date);
     return dateKey < startDateStr;
 };
-
-export const calculateBMI = (heightCm: number, weightKg: number): number => {
-    if (heightCm <= 0 || weightKg <= 0) return 0;
-    return weightKg / Math.pow(heightCm / 100, 2);
-};

@@ -1,43 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { NotificationManager } from './components/managers/NotificationManager';
-import { NeutralLoadingScreen } from './components/ui/NeutralLoadingScreen';
 import { StudentOnboarding } from './components/student/StudentOnboarding';
 import { StudentDashboard } from './components/student/StudentDashboard';
 import { sound } from './utils/sound';
 
 const AppContent: React.FC = () => {
-    const { state, updateState } = useApp();
-    const [progress, setProgress] = useState(0);
-    const [isInitialBoot, setIsInitialBoot] = useState(true);
-
-    // Initial boot sequence with dynamic progress loader
-    useEffect(() => {
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-            // Increments by small random chunks to feel organic and dynamic
-            const increment = Math.max(2, Math.floor(Math.random() * 8) + 4);
-            currentProgress = Math.min(100, currentProgress + increment);
-            setProgress(currentProgress);
-
-            if (currentProgress >= 100) {
-                clearInterval(interval);
-                // Hold 100% briefly for smooth fade-out transition
-                setTimeout(() => {
-                    setIsInitialBoot(false);
-                }, 250);
-            }
-        }, 50);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Ensure userType is always student
-    useEffect(() => {
-        if (state.userType !== 'student') {
-            updateState({ userType: 'student' });
-        }
-    }, [state.userType, updateState]);
+    const { state, updateState, updateCustomization } = useApp();
 
     // Theme management
     useEffect(() => {
@@ -77,11 +46,8 @@ const AppContent: React.FC = () => {
         };
     }, [state.theme]);
 
-    if (isInitialBoot) {
-        return <NeutralLoadingScreen progress={progress} />;
-    }
 
-    const showPermissionModal = state.football.customization.storagePermission === 'prompt';
+    const showPermissionModal = state.customization.storagePermission === 'prompt';
 
     const requestSystemPermission = async () => {
         const isNative = (window as any).Capacitor?.isNativePlatform();
@@ -100,25 +66,22 @@ const AppContent: React.FC = () => {
             });
         } else if (typeof Notification !== 'undefined') {
             try {
+                if (Notification.permission === 'granted') {
+                    return true;
+                }
                 const result = await Notification.requestPermission();
                 return result === 'granted';
             } catch (e) {
                 console.error(e);
             }
         }
-        return true; 
+        return false; 
     };
 
     const handleGrantPermission = async () => {
         const granted = await requestSystemPermission();
-        updateState({
-            football: {
-                ...state.football,
-                customization: {
-                    ...state.football.customization,
-                    storagePermission: granted ? 'granted' : 'denied'
-                }
-            }
+        updateCustomization({
+            storagePermission: granted ? 'granted' : 'denied'
         });
         if (granted) {
             sound.playSuccess();
@@ -128,14 +91,8 @@ const AppContent: React.FC = () => {
     };
 
     const handleDenyPermission = () => {
-        updateState({
-            football: {
-                ...state.football,
-                customization: {
-                    ...state.football.customization,
-                    storagePermission: 'denied'
-                }
-            }
+        updateCustomization({
+            storagePermission: 'denied'
         });
         sound.playError();
     };

@@ -7,7 +7,7 @@ import { sound } from '../../../utils/sound';
 interface SettingsSectionProps {
     state: any;
     updateState: (u: any) => void;
-    updateFootball: (u: any) => void;
+    updateCustomization: (u: any) => void;
     updateCollege: (u: any) => void;
     monthsToRender: { label: string; value: number; year: number }[];
     selectedMonths: number[];
@@ -19,7 +19,7 @@ interface SettingsSectionProps {
 }
 
 export const SettingsSection = React.memo<SettingsSectionProps>(({
-    state, updateState, updateFootball, updateCollege,
+    state, updateState, updateCustomization, updateCollege,
     monthsToRender, selectedMonths, toggleMonth,
     handleReset, handleFactoryReset, themePresets, importData
 }) => {
@@ -36,7 +36,9 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const [pastedBackup, setPastedBackup] = useState('');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const importFileInputRef = useRef<HTMLInputElement>(null);
     const [showRequestPermissionModal, setShowRequestPermissionModal] = useState(false);
+    const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
 
     const handleUploadClick = () => {
         sound.playClick();
@@ -59,11 +61,8 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64String = event.target?.result as string;
-            updateFootball({
-                customization: {
-                    ...cust,
-                    backgroundImage: base64String
-                }
+            updateCustomization({
+                backgroundImage: base64String
             });
             sound.playSuccess();
         };
@@ -90,13 +89,16 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
             });
         } else if (typeof Notification !== 'undefined') {
             try {
+                if (Notification.permission === 'granted') {
+                    return true;
+                }
                 const result = await Notification.requestPermission();
                 return result === 'granted';
             } catch (e) {
                 console.error(e);
             }
         }
-        return true; 
+        return false; 
     };
 
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +167,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
         }
     };
 
-    const cust = state.football.customization;
+    const cust = state.customization;
 
     return (
         <div className="space-y-8 max-w-2xl">
@@ -234,14 +236,13 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 border-t border-white/5">
                                     {themePresets.map((preset) => (
                                         <button key={preset.name} onClick={() => {
-                                            updateFootball({ customization: { 
-                                                ...cust, 
+                                            updateCustomization({ 
                                                 accentColor: preset.accentColor, 
                                                 gradientStart: preset.gradientStart, 
                                                 gradientMiddle: preset.gradientMiddle, 
                                                 gradientEnd: preset.gradientEnd, 
                                                 blur: preset.blur 
-                                            }}); sound.playSuccess();
+                                            }); sound.playSuccess();
                                         }} className="p-3 bg-black/35 hover:bg-black/50 border border-white/5 hover:border-white/20 rounded-xl flex flex-col items-center gap-2 transition-all group">
                                             <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center transition-transform group-hover:scale-110" style={{ background: `linear-gradient(135deg, ${preset.gradientStart} 0%, ${preset.gradientMiddle} 50%, ${preset.gradientEnd} 100%)` }}>
                                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: preset.accentColor }} />
@@ -263,16 +264,16 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div><label className="text-xs font-medium text-gray-400 block mb-2">Accent Theme Color</label>
                                             <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
-                                                <input type="color" value={cust.accentColor} onChange={(e) => updateFootball({ customization: { ...cust, accentColor: e.target.value } })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
+                                                <input type="color" value={cust.accentColor} onChange={(e) => updateCustomization({ accentColor: e.target.value })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
                                                 <span className="text-sm font-mono text-gray-300 uppercase">{cust.accentColor}</span>
                                             </div>
                                         </div>
                                         <div><label className="text-xs font-medium text-gray-400 block mb-2">Greetings Text Color</label>
                                             <div className="flex items-center gap-3 bg-black/20 p-2.5 rounded-xl border border-white/5">
-                                                <input type="color" value={cust.greetingsColor || '#ffffff'} onChange={(e) => updateFootball({ customization: { ...cust, greetingsColor: e.target.value } })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
+                                                <input type="color" value={cust.greetingsColor || '#ffffff'} onChange={(e) => updateCustomization({ greetingsColor: e.target.value })} className="w-10 h-10 rounded-lg border-0 bg-transparent cursor-pointer" />
                                                 <span className="text-sm font-mono text-gray-300 uppercase">{cust.greetingsColor || 'DEFAULT'}</span>
                                                 {cust.greetingsColor ? (
-                                                    <button onClick={() => { updateFootball({ customization: { ...cust, greetingsColor: '' } }); sound.playClick(); }} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase ml-auto">Reset</button>
+                                                    <button onClick={() => { updateCustomization({ greetingsColor: '' }); sound.playClick(); }} className="text-[10px] text-red-400 hover:text-red-300 font-bold uppercase ml-auto">Reset</button>
                                                 ) : null}
                                             </div>
                                         </div>
@@ -283,7 +284,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                                 <button
                                                     key={caseOption}
                                                     type="button"
-                                                    onClick={() => { updateFootball({ customization: { ...cust, greetingsCasing: caseOption } }); sound.playClick(); }}
+                                                    onClick={() => { updateCustomization({ greetingsCasing: caseOption }); sound.playClick(); }}
                                                     className={clsx(
                                                         "flex-1 py-2 px-3 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all border",
                                                         (cust.greetingsCasing || 'caps') === caseOption
@@ -308,15 +309,15 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                             {fontsOpen && (
                                 <div className="space-y-4 pt-2 border-t border-white/5">
                                     <div><label className="text-xs font-medium text-gray-400 block mb-2">Logo & Branding Font Style</label>
-                                        <select value={cust.logoFont || 'sekuya'} onChange={(e) => { updateFootball({ customization: { ...cust, logoFont: e.target.value } }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
+                                        <select value={cust.logoFont || 'sekuya'} onChange={(e) => { updateCustomization({ logoFont: e.target.value }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
                                             <option value="sekuya" className="bg-[#121214] text-white">Sekuya (Original Cyber)</option><option value="mono" className="bg-[#121214] text-white">Share Tech Mono (Console Tech)</option><option value="grotesk" className="bg-[#121214] text-white">Space Grotesk (Modern Geometric)</option><option value="fascinate" className="bg-[#121214] text-white">Fascinate Inline (Stylized Art Deco)</option><option value="cinzel-dec" className="bg-[#121214] text-white">Cinzel Decorative (Classic Serif)</option><option value="orbitron" className="bg-[#121214] text-white">Orbitron (Futuristic Display)</option>
                                         </select></div>
                                     <div><label className="text-xs font-medium text-gray-400 block mb-2">Greetings & Section Headers Font Style</label>
-                                        <select value={cust.greetingsFont || 'outfit'} onChange={(e) => { updateFootball({ customization: { ...cust, greetingsFont: e.target.value } }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
+                                        <select value={cust.greetingsFont || 'outfit'} onChange={(e) => { updateCustomization({ greetingsFont: e.target.value }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
                                             <option value="outfit" className="bg-[#121214] text-white">Outfit (Elegant Geometric)</option><option value="orbitron" className="bg-[#121214] text-white">Orbitron (Futuristic Sci-Fi)</option><option value="grotesk" className="bg-[#121214] text-white">Space Grotesk (Symmetrical Sans)</option><option value="fascinate" className="bg-[#121214] text-white">Fascinate Inline (Artistic Neon)</option><option value="cinzel" className="bg-[#121214] text-white">Cinzel (Classic Roman)</option><option value="rajdhani" className="bg-[#121214] text-white">Rajdhani (Technical Square)</option>
                                         </select></div>
                                     <div><label className="text-xs font-medium text-gray-400 block mb-2">Universal Body & Content Font Style</label>
-                                        <select value={cust.bodyFont || 'jakarta'} onChange={(e) => { updateFootball({ customization: { ...cust, bodyFont: e.target.value } }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
+                                        <select value={cust.bodyFont || 'jakarta'} onChange={(e) => { updateCustomization({ bodyFont: e.target.value }); sound.playClick(); }} className="w-full bg-black/20 p-3 rounded-xl border border-white/5 text-sm font-medium text-gray-300 focus:outline-none focus:border-blue-500 animate-none">
                                             <option value="jakarta" className="bg-[#121214] text-white">Plus Jakarta Sans (Balanced UI)</option><option value="rajdhani" className="bg-[#121214] text-white">Rajdhani (Tech Compact)</option><option value="archivo" className="bg-[#121214] text-white">Archivo (High-Legibility Grotesque)</option><option value="grotesk" className="bg-[#121214] text-white">Space Grotesk (Geometric Sans)</option><option value="honk" className="bg-[#121214] text-white">Honk (Playful Color Font)</option><option value="lora" className="bg-[#121214] text-white">Lora (Sophisticated Serif)</option>
                                         </select></div>
                                     <p className="text-[10px] text-gray-500 italic">Note: Preset selections will align typography dynamically. You can adjust individually as needed.</p>
@@ -334,14 +335,14 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                     <div className="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
                                         <span className="text-xs text-gray-400">Default Themes:</span>
                                         <div className="flex gap-2">
-                                            <button onClick={() => { updateFootball({ customization: { ...cust, gradientStart: '#0a0a0c', gradientMiddle: '#0e131f', gradientEnd: '#0a0a0c' } }); sound.playClick(); }} className="px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[10px] font-bold text-blue-300 rounded-lg transition-colors uppercase tracking-wider">Default Blue-Noir</button>
-                                            <button onClick={() => { updateFootball({ customization: { ...cust, gradientStart: '#000000', gradientMiddle: '#000000', gradientEnd: '#000000' } }); sound.playClick(); }} className="px-2.5 py-1.5 bg-black/40 hover:bg-black/60 border border-white/10 text-[10px] font-bold text-gray-400 hover:text-white rounded-lg transition-colors uppercase tracking-wider">Pure Black</button>
+                                            <button onClick={() => { updateCustomization({ gradientStart: '#0a0a0c', gradientMiddle: '#0e131f', gradientEnd: '#0a0a0c' }); sound.playClick(); }} className="px-2.5 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[10px] font-bold text-blue-300 rounded-lg transition-colors uppercase tracking-wider">Default Blue-Noir</button>
+                                            <button onClick={() => { updateCustomization({ gradientStart: '#000000', gradientMiddle: '#000000', gradientEnd: '#000000' }); sound.playClick(); }} className="px-2.5 py-1.5 bg-black/40 hover:bg-black/60 border border-white/10 text-[10px] font-bold text-gray-400 hover:text-white rounded-lg transition-colors uppercase tracking-wider">Pure Black</button>
                                         </div>
                                     </div>
                                     <div className="bg-black/20 p-4 rounded-xl border border-white/5 space-y-3">
                                         <div className="flex items-center justify-between"><span className="text-xs font-medium text-gray-400">Set Solid Background Color</span>
                                             <div className="flex items-center gap-3">
-                                                <input type="color" value={cust.gradientStart === cust.gradientEnd ? cust.gradientStart : '#0a0a0c'} onChange={(e) => { const c = e.target.value; updateFootball({ customization: { ...cust, gradientStart: c, gradientMiddle: c, gradientEnd: c } }); }} className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer" />
+                                                <input type="color" value={cust.gradientStart === cust.gradientEnd ? cust.gradientStart : '#0a0a0c'} onChange={(e) => { const c = e.target.value; updateCustomization({ gradientStart: c, gradientMiddle: c, gradientEnd: c }); }} className="w-8 h-8 rounded-lg border-0 bg-transparent cursor-pointer" />
                                                 <span className="text-xs font-mono text-gray-300 uppercase">{cust.gradientStart === cust.gradientEnd ? cust.gradientStart : 'Custom Gradient'}</span>
                                             </div>
                                         </div>
@@ -351,7 +352,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                         <div className="grid grid-cols-3 gap-3">
                                             {(['gradientStart','gradientMiddle','gradientEnd'] as const).map((key, i) => (
                                                 <div key={key}><span className="text-[10px] text-gray-500 block mb-1">{['Start','Middle','End'][i]} Color</span>
-                                                    <input type="color" value={cust[key]} onChange={(e) => updateFootball({ customization: { ...cust, [key]: e.target.value } })} className="w-full h-10 rounded-lg bg-black/20 border border-white/5 cursor-pointer" /></div>
+                                                    <input type="color" value={cust[key]} onChange={(e) => updateCustomization({ [key]: e.target.value })} className="w-full h-10 rounded-lg bg-black/20 border border-white/5 cursor-pointer" /></div>
                                             ))}
                                         </div>
                                     </div>
@@ -376,7 +377,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                                     <Button 
                                                         variant="danger" 
                                                         onClick={() => {
-                                                            updateFootball({ customization: { ...cust, backgroundImage: null } });
+                                                            updateCustomization({ backgroundImage: null });
                                                             sound.playSuccess();
                                                         }} 
                                                         className="py-2 px-4 text-xs bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 hover:border-rose-500/30"
@@ -388,8 +389,8 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                         </div>
                                         {cust.backgroundImage && (
                                             <div className="grid grid-cols-2 gap-4">
-                                                <div><label className="text-[10px] text-gray-500 block mb-1">Background Blur ({cust.blur}px)</label><input type="range" min="0" max="40" value={cust.blur} onChange={(e) => updateFootball({ customization: { ...cust, blur: parseInt(e.target.value) } })} className="w-full accent-blue-500" /></div>
-                                                <div><label className="text-[10px] text-gray-500 block mb-1">Zoom ({cust.bgZoom}%)</label><input type="range" min="50" max="200" value={cust.bgZoom} onChange={(e) => updateFootball({ customization: { ...cust, bgZoom: parseInt(e.target.value) } })} className="w-full accent-blue-500" /></div>
+                                                <div><label className="text-[10px] text-gray-500 block mb-1">Background Blur ({cust.blur}px)</label><input type="range" min="0" max="40" value={cust.blur} onChange={(e) => updateCustomization({ blur: parseInt(e.target.value) })} className="w-full accent-blue-500" /></div>
+                                                <div><label className="text-[10px] text-gray-500 block mb-1">Zoom ({cust.bgZoom}%)</label><input type="range" min="50" max="200" value={cust.bgZoom} onChange={(e) => updateCustomization({ bgZoom: parseInt(e.target.value) })} className="w-full accent-blue-500" /></div>
                                             </div>
                                         )}
                                     </div>
@@ -407,7 +408,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                                 <button
                                                     onClick={() => {
                                                         const newVal = cust.soundEnabled === false;
-                                                        updateFootball({ customization: { ...cust, soundEnabled: newVal } });
+                                                        updateCustomization({ soundEnabled: newVal });
                                                         if (newVal) {
                                                             setTimeout(() => sound.playClick(), 50);
                                                         }
@@ -433,7 +434,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                                 <button
                                                     onClick={() => {
                                                         const newVal = cust.vibrationEnabled === false;
-                                                        updateFootball({ customization: { ...cust, vibrationEnabled: newVal } });
+                                                        updateCustomization({ vibrationEnabled: newVal });
                                                         if (newVal && navigator.vibrate) {
                                                             try { navigator.vibrate(20); } catch (e) {}
                                                         }
@@ -458,8 +459,8 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         {/* Restore Defaults */}
                         <div className="pt-4 border-t border-white/5 flex justify-end">
                             <Button variant="secondary" onClick={() => {
-                                updateFootball({ customization: { accentColor: '#3b82f6', blur: 10, gradientStart: '#0a0a0c', gradientMiddle: '#0e131f', gradientEnd: '#0a0a0c', fontStyle: 'default', logoFont: 'sekuya', greetingsFont: 'outfit', bodyFont: 'jakarta', backgroundImage: null, bgZoom: 100, bgX: 50, bgY: 50, soundEnabled: true, vibrationEnabled: true, storagePermission: cust.storagePermission || 'prompt' } });
-                                sound.playSuccess();
+                                sound.playClick();
+                                setShowResetConfirmModal(true);
                             }} className="text-xs">Restore to Default</Button>
                         </div>
                     </div>
@@ -509,15 +510,22 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         <h4 className="text-sm font-bold text-white uppercase tracking-wider">Import Data</h4>
                         <p className="text-xs text-gray-500 font-medium font-medium">Upload a backup file or paste your backup JSON code to restore your profile.</p>
                         <div className="flex flex-col gap-2 pt-2">
-                            <label className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 text-xs rounded-lg cursor-pointer text-center transition-colors">
+                            <Button 
+                                onClick={() => {
+                                    sound.playClick();
+                                    importFileInputRef.current?.click();
+                                }}
+                                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 text-xs"
+                            >
                                 <Upload size={14} /> Import Backup File
-                                <input 
-                                    type="file" 
-                                    accept=".json" 
-                                    onChange={handleFileImport} 
-                                    className="hidden" 
-                                />
-                            </label>
+                            </Button>
+                            <input 
+                                type="file" 
+                                ref={importFileInputRef}
+                                accept=".json" 
+                                onChange={handleFileImport} 
+                                className="hidden" 
+                            />
                             
                             <div className="flex gap-2">
                                 <input
@@ -596,23 +604,59 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         <div className="flex gap-3">
                             <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowRequestPermissionModal(false)}>Cancel</Button>
                              <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={async () => {
-                                const granted = await requestSystemPermission();
-                                updateFootball({
-                                    customization: {
-                                        ...cust,
-                                        storagePermission: granted ? 'granted' : 'denied'
-                                    }
-                                });
-                                setShowRequestPermissionModal(false);
-                                if (granted) {
-                                    sound.playSuccess();
-                                    setTimeout(() => {
-                                        fileInputRef.current?.click();
-                                    }, 100);
-                                } else {
-                                    sound.playError();
-                                }
-                            }}>Grant</Button>
+                                 const granted = await requestSystemPermission();
+                                 updateCustomization({
+                                     storagePermission: granted ? 'granted' : 'denied'
+                                 });
+                                 setShowRequestPermissionModal(false);
+                                 if (granted) {
+                                     sound.playSuccess();
+                                     setTimeout(() => {
+                                         fileInputRef.current?.click();
+                                     }, 100);
+                                 } else {
+                                     sound.playError();
+                                 }
+                             }}>Grant</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showResetConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
+                    <div className="bg-[#121214] border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
+                        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 mb-4 mx-auto">
+                            <RotateCcw size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 text-white text-center">Restore Defaults?</h3>
+                        <p className="text-gray-400 text-sm mb-6 leading-relaxed text-center">
+                            This will reset your theme colors, gradients, font family choices, blur filters, haptics, and background images back to factory defaults.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => { sound.playClick(); setShowResetConfirmModal(false); }}>Cancel</Button>
+                            <Button className="flex-1 bg-rose-500 text-white hover:bg-rose-600" onClick={() => {
+                                 updateCustomization({
+                                     accentColor: '#3b82f6',
+                                     blur: 10,
+                                     gradientStart: '#0a0a0c',
+                                     gradientMiddle: '#0e131f',
+                                     gradientEnd: '#0a0a0c',
+                                     fontStyle: 'default',
+                                     logoFont: 'sekuya',
+                                     greetingsFont: 'outfit',
+                                     bodyFont: 'jakarta',
+                                     backgroundImage: null,
+                                     bgZoom: 100,
+                                     bgX: 50,
+                                     bgY: 50,
+                                     soundEnabled: true,
+                                     vibrationEnabled: true,
+                                     storagePermission: cust.storagePermission || 'prompt'
+                                 });
+                                 setShowResetConfirmModal(false);
+                                 sound.playSuccess();
+                             }}>Reset</Button>
                         </div>
                     </div>
                 </div>
