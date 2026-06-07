@@ -56,7 +56,14 @@ export const UpdateManager: React.FC = () => {
             
             const response = await fetch('https://api.github.com/repos/Abhinav-RM/neuralis/releases/latest');
             if (!response.ok) {
-                if (isManual) showToast("Error connecting to GitHub");
+                if (response.status === 404) {
+                    if (isManual) {
+                        showToast(`Neuralis is up to date (v${APP_VERSION})`);
+                        sound.playSuccess();
+                    }
+                } else {
+                    if (isManual) showToast("Error connecting to GitHub");
+                }
                 return;
             }
             
@@ -187,7 +194,7 @@ export const UpdateManager: React.FC = () => {
                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                     animation: 'fade-in 0.2s ease-out'
                 }}>
-                    ✨ {toastMessage}
+                    {toastMessage}
                 </div>
             );
         }

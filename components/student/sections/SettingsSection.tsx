@@ -480,24 +480,26 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
             </div>
 
             {/* App Updates */}
-            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
-                <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-bold flex items-center gap-2"><Download size={20} className="text-blue-400 rotate-180" /> App Updates</h3>
-                    <Button 
-                        variant="secondary" 
-                        className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-xs font-semibold" 
-                        onClick={() => {
-                            sound.playClick();
-                            window.dispatchEvent(new CustomEvent('check-for-updates'));
-                        }}
-                    >
-                        Check for Updates
-                    </Button>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <Download size={18} className="text-blue-400 rotate-180 shrink-0" />
+                    <div>
+                        <h3 className="text-sm font-bold text-white">App Updates</h3>
+                        <p className="text-gray-400 text-[11px] mt-0.5">
+                            Current Version: <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/5">v{APP_VERSION}</span> • Checks GitHub for hot-updates and patches.
+                        </p>
+                    </div>
                 </div>
-                <p className="text-gray-400 text-sm">
-                    Current Version: <span className="font-mono text-white font-bold bg-white/5 px-2 py-0.5 rounded border border-white/5">v{APP_VERSION}</span>. 
-                    Checks GitHub for updates, downloads and applies them instantly.
-                </p>
+                <Button 
+                    variant="secondary" 
+                    className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto" 
+                    onClick={() => {
+                        sound.playClick();
+                        window.dispatchEvent(new CustomEvent('check-for-updates'));
+                    }}
+                >
+                    Check for Updates
+                </Button>
             </div>
 
             {/* Backup & Restore */}

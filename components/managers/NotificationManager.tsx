@@ -44,7 +44,7 @@ export const NotificationManager: React.FC = () => {
     }, [setPendingAction, updateState]);
 
     useEffect(() => {
-        const requestPermissions = async () => {
+        const setupNotifications = async () => {
             const isNative = Capacitor.isNativePlatform();
             
             if (isNative) {
@@ -63,8 +63,63 @@ export const NotificationManager: React.FC = () => {
                             setPermissionDenied(false);
                         }
                     }
+
+                    // Create custom notification channels for the preloaded WAV sounds
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_default',
+                        name: 'Neuralis Default Alerts',
+                        description: 'Notifications with the default system sound',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true
+                    });
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_chime',
+                        name: 'Neuralis Chime Alerts',
+                        description: 'Notifications with a gentle chime',
+                        sound: 'chime.wav',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true
+                    });
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_ping',
+                        name: 'Neuralis Digital Ping Alerts',
+                        description: 'Notifications with a tech ping sound',
+                        sound: 'ping.wav',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true
+                    });
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_cyber',
+                        name: 'Neuralis Cyber Sweep Alerts',
+                        description: 'Notifications with a sci-fi sweep sound',
+                        sound: 'cyber.wav',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true
+                    });
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_beep',
+                        name: 'Neuralis Pulse Alarm Alerts',
+                        description: 'Notifications with a triple beep alert',
+                        sound: 'beep.wav',
+                        importance: 5,
+                        visibility: 1,
+                        vibration: true
+                    });
+                    await LocalNotifications.createChannel({
+                        id: 'neuralis_silent',
+                        name: 'Neuralis Silent Alerts',
+                        description: 'Notifications with vibration only and no sound',
+                        importance: 3,
+                        sound: undefined,
+                        visibility: 1,
+                        vibration: true
+                    });
                 } catch (e) {
-                    console.error("Error checking notification permissions:", e);
+                    console.error("Error setting up notification channels/permissions:", e);
                 }
             } else if (typeof Notification !== 'undefined') {
                 if (Notification.permission === 'denied') {
@@ -79,7 +134,7 @@ export const NotificationManager: React.FC = () => {
                 }
             }
         };
-        requestPermissions();
+        setupNotifications();
     }, []);
 
     useEffect(() => {
@@ -106,18 +161,17 @@ export const NotificationManager: React.FC = () => {
                 skip: boolean;
                 repeats?: string;
                 days?: number[];
+                sound?: string;
             }[] = [
-                { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.notificationToggles.books },
-                { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.notificationToggles.idcard },
-                { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.notificationToggles.homework },
-                { baseId: 600, hour: state.morningReminderHour || 8, minute: state.morningReminderMinute || 0, msg: state.notificationMessages.morning, skip: !state.notificationToggles.morning },
+                { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.notificationToggles.books, sound: 'default' },
+                { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.notificationToggles.idcard, sound: 'default' },
+                { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.notificationToggles.homework, sound: 'default' },
+                { baseId: 600, hour: state.morningReminderHour || 8, minute: state.morningReminderMinute || 0, msg: state.notificationMessages.morning, skip: !state.notificationToggles.morning, sound: 'default' },
                 // Custom Notifications — use stable IDs derived from cn.id to prevent collisions on delete
                 ...(college.customNotifications || [])
                     .filter(cn => cn.enabled)
                     .map((cn) => {
                         const [h, m] = cn.time.split(':').map(Number);
-                        // Generate a stable baseId from the notification's unique ID (timestamp string)
-                        // Use modulo to keep it in a safe range, offset by 10000 to avoid collision with system IDs
                         const stableBase = 10000 + (Math.abs(parseInt(cn.id, 10)) % 50000);
                         return {
                             baseId: stableBase,
@@ -125,8 +179,9 @@ export const NotificationManager: React.FC = () => {
                             minute: m,
                             msg: cn.message,
                             skip: false,
-                            repeats: cn.repeats || 'daily', // Default to daily for backward compat
-                            days: cn.days
+                            repeats: cn.repeats || 'daily',
+                            days: cn.days,
+                            sound: cn.sound || 'default'
                         };
                     })
             ].filter(t => !t.skip);
@@ -174,7 +229,8 @@ export const NotificationManager: React.FC = () => {
                         targetDate: target,
                         msg: t.msg,
                         module: t.module,
-                        type: t.type
+                        type: t.type,
+                        sound: t.sound || 'default'
                     });
 
                     scheduled++;
@@ -196,7 +252,6 @@ export const NotificationManager: React.FC = () => {
                             const [rh, rm] = rem.time.split(':').map(Number);
                             target.setHours(rh, rm, 0, 0);
                         } else {
-                            // Fallback for unexpected types or missing 'at'
                             return;
                         }
 
@@ -207,7 +262,8 @@ export const NotificationManager: React.FC = () => {
                                 targetDate: target,
                                 msg: rem.message || `Assignment Reminder: ${a.title} 📝`,
                                 module: 'college',
-                                type: 'reminder'
+                                type: 'reminder',
+                                sound: rem.sound || 'default'
                             });
                         }
                     });
@@ -238,7 +294,8 @@ export const NotificationManager: React.FC = () => {
                                 targetDate: target,
                                 msg: rem.message || `Exam Reminder: ${e.subject} 📚`,
                                 module: 'college',
-                                type: 'reminder'
+                                type: 'reminder',
+                                sound: rem.sound || 'default'
                             });
                         }
                     });
@@ -253,15 +310,24 @@ export const NotificationManager: React.FC = () => {
                         await LocalNotifications.cancel({ notifications: pending.notifications });
                     }
                     
-                    const capNotifications = allEvents.map(e => ({
-                        id: e.id,
-                        title: 'NEURALIS',
-                        body: e.msg,
-                        schedule: { at: new Date(e.time) },
-                        extra: { module: e.module, type: e.type },
-                        smallIcon: 'icon',
-                        largeIcon: 'icon'
-                    }));
+                    const capNotifications = allEvents.map(e => {
+                        const selectedSound = e.sound || state.customization?.defaultNotificationSound || 'default';
+                        let channelId = 'neuralis_default';
+                        if (['chime', 'ping', 'cyber', 'beep', 'silent'].includes(selectedSound)) {
+                            channelId = `neuralis_${selectedSound}`;
+                        }
+                        
+                        return {
+                            id: e.id,
+                            title: 'NEURALIS',
+                            body: e.msg,
+                            schedule: { at: new Date(e.time) },
+                            extra: { module: e.module, type: e.type },
+                            channelId: channelId,
+                            smallIcon: 'icon',
+                            largeIcon: 'icon'
+                        };
+                    });
 
                     if (capNotifications.length > 0) {
                         await LocalNotifications.schedule({ notifications: capNotifications });
@@ -303,7 +369,32 @@ export const NotificationManager: React.FC = () => {
                 const delay = Math.max(5000, nextEvent.time - now.getTime()); // Min 5s delay
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
                 timeoutRef.current = setTimeout(() => {
-                    sound.playLevelUp();
+                    // Play the correct sound in foreground
+                    const eventSound = nextEvent.sound || state.customization?.defaultNotificationSound || 'default';
+                    if (eventSound === 'chime') {
+                        sound.playLevelUp();
+                    } else if (eventSound === 'ping') {
+                        sound.playCoin();
+                    } else if (eventSound === 'cyber') {
+                        sound.playRobotStartup();
+                    } else if (eventSound === 'beep') {
+                        sound.playError();
+                    } else if (eventSound.startsWith('uploaded_')) {
+                        const uploadedSounds = state.customization?.uploadedSounds || [];
+                        const found = uploadedSounds.find((s: any) => `uploaded_${s.name}` === eventSound);
+                        if (found && found.data) {
+                            try {
+                                const audio = new Audio(found.data);
+                                audio.volume = 0.3;
+                                audio.play().catch(er => console.error("Foreground Audio play failed:", er));
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        }
+                    } else if (eventSound !== 'silent') {
+                        sound.playClick();
+                    }
+
                     if (!isNative && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
                         new Notification(`NEURALIS`, { body: nextEvent.msg, icon: '/favicon.ico' });
                     }
@@ -325,12 +416,12 @@ export const NotificationManager: React.FC = () => {
         college.homeworkReminderHour, college.homeworkReminderMinute,
         state.morningReminderHour, state.morningReminderMinute,
         state.notificationMessages,
+        state.customization?.defaultNotificationSound,
         college.customNotifications, college.assignments, college.exams
     ]);
 
     const openAppSettings = () => {
         if (Capacitor.isNativePlatform()) {
-            // Opens Android app notification settings directly
             App.openUrl({ url: 'app-settings:' });
         }
     };
@@ -399,5 +490,5 @@ export const NotificationManager: React.FC = () => {
         );
     }
 
-    return null; 
+    return null;
 };

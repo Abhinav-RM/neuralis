@@ -821,6 +821,8 @@ export const StudentDashboard: React.FC = () => {
 
                     {activeSection === 'notifications' && (
                         <NotificationsSection
+                            state={state}
+                            updateCustomization={updateCustomization}
                             assignments={assignments}
                             exams={exams}
                             customNotifications={college.customNotifications || []}
