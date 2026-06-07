@@ -25,3 +25,7 @@ dist-ssr
 
 # Playwright MCP context files
 .playwright-mcp/
+
+# Vite dependency cache & Vercel
+.vite
+.vercel
