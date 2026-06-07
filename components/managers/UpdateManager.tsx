@@ -49,6 +49,17 @@ export const UpdateManager: React.FC = () => {
     };
 
     const checkForUpdates = async (isManual = false) => {
+        const lastCheck = localStorage.getItem('neuralis_last_update_check');
+        const now = Date.now();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+
+        if (lastCheck && now - parseInt(lastCheck, 10) < oneDayMs) {
+            if (isManual) {
+                showToast("Already checked for updates today.");
+            }
+            return;
+        }
+
         try {
             if (isManual) {
                 showToast("Checking for updates...");
@@ -57,6 +68,8 @@ export const UpdateManager: React.FC = () => {
             const response = await fetch('https://api.github.com/repos/Abhinav-RM/neuralis/releases/latest');
             if (!response.ok) {
                 if (response.status === 404) {
+                    // Valid connection, but no releases: update check timestamp
+                    localStorage.setItem('neuralis_last_update_check', now.toString());
                     if (isManual) {
                         showToast(`Neuralis is up to date (v${APP_VERSION})`);
                         sound.playSuccess();
@@ -76,6 +89,9 @@ export const UpdateManager: React.FC = () => {
                 return;
             }
             
+            // Valid connection and release found: update check timestamp
+            localStorage.setItem('neuralis_last_update_check', now.toString());
+
             const data = await response.json();
             const latestVersion = data.tag_name;
             const body = data.body || 'No release notes provided.';
@@ -112,17 +128,10 @@ export const UpdateManager: React.FC = () => {
     useEffect(() => {
         // Run auto check on launch after a small delay to avoid competing with startup
         const timer = setTimeout(() => {
-            const lastCheck = localStorage.getItem('neuralis_last_update_check');
-            const now = Date.now();
-            const oneDayMs = 24 * 60 * 60 * 1000;
-            
-            if (!lastCheck || now - parseInt(lastCheck, 10) > oneDayMs) {
-                checkForUpdates(false);
-                localStorage.setItem('neuralis_last_update_check', now.toString());
-            }
+            checkForUpdates(false);
         }, 5000);
 
-        // Listen for manual check trigger from settings (ignores the once-a-day throttle)
+        // Listen for manual check trigger from settings
         const handleManualCheck = () => {
             checkForUpdates(true);
         };
