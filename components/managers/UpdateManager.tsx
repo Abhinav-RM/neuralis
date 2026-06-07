@@ -61,6 +61,15 @@ export const UpdateManager: React.FC = () => {
                         showToast(`Neuralis is up to date (v${APP_VERSION})`);
                         sound.playSuccess();
                     }
+                } else if (response.status === 403) {
+                    try {
+                        const errData = await response.json();
+                        if (errData.message && errData.message.toLowerCase().includes('rate limit')) {
+                            if (isManual) showToast("GitHub rate limit exceeded. Try again in an hour.");
+                            return;
+                        }
+                    } catch (e) {}
+                    if (isManual) showToast("Access denied by GitHub");
                 } else {
                     if (isManual) showToast("Error connecting to GitHub");
                 }
