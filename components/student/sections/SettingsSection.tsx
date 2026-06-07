@@ -40,10 +40,10 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
         setTimeout(() => setDeviceIdCopied(false), 2000);
     };
 
-    const handleRegisterBeta = () => {
+    const handleRequestUpdate = () => {
         sound.playClick();
-        const subject = encodeURIComponent(`Neuralis Beta Registration - ${state.studentName || 'Student'}`);
-        const body = encodeURIComponent(`Hi Abhinav,\n\nPlease register my device for Neuralis Beta updates.\n\nDevice ID: ${deviceId}\nName: ${state.studentName || 'Student'}\nPlatform: ${Capacitor.isNativePlatform() ? 'Android APK' : 'Web'}\n\nThanks!`);
+        const subject = encodeURIComponent(`Neuralis Update Request - ${state.studentName || 'Student'}`);
+        const body = encodeURIComponent(`Hi Abhinav,\n\nPlease register/update my device in the update targets.\n\nDevice ID: ${deviceId}\nName: ${state.studentName || 'Student'}\nPlatform: ${Capacitor.isNativePlatform() ? 'Android APK' : 'Web'}\n\nThanks!`);
         window.location.href = `mailto:${DEV_EMAIL}?subject=${subject}&body=${body}`;
     };
 
@@ -535,10 +535,10 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         </button>
                     </div>
                     <button
-                        onClick={handleRegisterBeta}
+                        onClick={handleRequestUpdate}
                         className="text-blue-400 hover:underline font-semibold flex items-center gap-1 self-start sm:self-auto"
                     >
-                        Register for Beta Updates &rarr;
+                        Request Update &rarr;
                     </button>
                 </div>
             </div>
