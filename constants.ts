@@ -12,4 +12,4 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
     { id: "col_perfect", name: "Perfect", description: "100% monthly attendance", icon: "🎯", category: "College", unlocked: false },
 ];
 
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.0.1';
