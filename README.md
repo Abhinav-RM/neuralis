@@ -3,6 +3,10 @@
 # 🌌 Neuralis
 ### *The Ultimate Cyber-Noir Student Companion & Productivity Center*
 
+[![Try Web Version](https://img.shields.io/badge/Web_Version-Try_Online-0070f3?style=for-the-badge&logo=vercel&logoColor=white)](https://neuralis-iota.vercel.app/)
+[![Landing Page](https://img.shields.io/badge/Landing_Page-Visit-7928ca?style=for-the-badge&logo=googlechrome&logoColor=white)](https://brief-theta-blush.vercel.app)
+[![Download APK](https://img.shields.io/badge/Android_APK-Download-3ddc84?style=for-the-badge&logo=android&logoColor=white)](https://brief-theta-blush.vercel.app/Neuralis.apk)
+
 </div>
 
 ---
