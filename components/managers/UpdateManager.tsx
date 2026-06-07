@@ -136,7 +136,7 @@ export const UpdateManager: React.FC = () => {
             setProgress(0);
 
             // Listen for download progress
-            const progressListener = await (window as any).Capacitor.Plugins.CapacitorUpdater?.addListener(
+            const progressListener = await CapacitorUpdater?.addListener(
                 'download',
                 (data: { percent: number }) => {
                     setProgress(Math.round(data.percent));

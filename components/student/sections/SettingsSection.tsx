@@ -4,6 +4,8 @@ import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, Chevro
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
 import { APP_VERSION } from '../../../constants';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 interface SettingsSectionProps {
     state: any;
@@ -74,10 +76,10 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     };
 
     const requestSystemPermission = async () => {
-        const isNative = (window as any).Capacitor?.isNativePlatform();
+        const isNative = Capacitor.isNativePlatform();
         if (isNative) {
             try {
-                const permission = await (window as any).Capacitor.Plugins.LocalNotifications.requestPermissions();
+                const permission = await LocalNotifications.requestPermissions();
                 return permission.display === 'granted';
             } catch (e) {
                 console.error(e);

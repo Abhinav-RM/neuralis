@@ -5,6 +5,8 @@ import { UpdateManager } from './components/managers/UpdateManager';
 import { StudentOnboarding } from './components/student/StudentOnboarding';
 import { StudentDashboard } from './components/student/StudentDashboard';
 import { sound } from './utils/sound';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 const AppContent: React.FC = () => {
     const { state, updateState, updateCustomization } = useApp();
@@ -51,10 +53,10 @@ const AppContent: React.FC = () => {
     const showPermissionModal = state.customization.storagePermission === 'prompt';
 
     const requestSystemPermission = async () => {
-        const isNative = (window as any).Capacitor?.isNativePlatform();
+        const isNative = Capacitor.isNativePlatform();
         if (isNative) {
             try {
-                const permission = await (window as any).Capacitor.Plugins.LocalNotifications.requestPermissions();
+                const permission = await LocalNotifications.requestPermissions();
                 return permission.display === 'granted';
             } catch (e) {
                 console.error(e);

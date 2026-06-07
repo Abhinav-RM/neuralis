@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { sound } from '../../utils/sound';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { App } from '@capacitor/app';
 
 export const NotificationManager: React.FC = () => {
     const { state, setPendingAction, updateState } = useApp();
@@ -11,11 +14,11 @@ export const NotificationManager: React.FC = () => {
     const [dismissedWarning, setDismissedWarning] = useState(false);
 
     useEffect(() => {
-        const isNative = typeof (window as any).cordova !== 'undefined' || (window as any).Capacitor?.isNativePlatform();
+        const isNative = Capacitor.isNativePlatform();
         
         if (isNative) {
-            const handleNotificationClick = (notification: any) => {
-                const data = notification.data || notification.notification?.data;
+            const handleNotificationClick = (action: any) => {
+                const data = action.notification?.data;
                 if (data && data.module) {
                     setPendingAction({
                         module: data.module,
@@ -25,26 +28,16 @@ export const NotificationManager: React.FC = () => {
                 }
             };
 
-            // 1. Cordova Support
-            const cordova = (window as any).cordova;
-            if (cordova?.plugins?.notification?.local) {
-                cordova.plugins.notification.local.on('click', handleNotificationClick);
-            }
-
-            // 2. Capacitor Support
-            const Capacitor = (window as any).Capacitor;
-            if (Capacitor?.Plugins?.LocalNotifications) {
-                Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', (action: any) => {
-                    handleNotificationClick(action);
-                });
+            let actionListener: any = null;
+            try {
+                actionListener = LocalNotifications.addListener('localNotificationActionPerformed', handleNotificationClick);
+            } catch (err) {
+                console.error("Failed to add LocalNotifications listener:", err);
             }
 
             return () => {
-                if (cordova?.plugins?.notification?.local) {
-                    cordova.plugins.notification.local.un('click', handleNotificationClick);
-                }
-                if (Capacitor?.Plugins?.LocalNotifications) {
-                    Capacitor.Plugins.LocalNotifications.removeAllListeners();
+                if (actionListener) {
+                    actionListener.then ? actionListener.then((l: any) => l.remove()) : actionListener.remove();
                 }
             };
         }
@@ -52,19 +45,17 @@ export const NotificationManager: React.FC = () => {
 
     useEffect(() => {
         const requestPermissions = async () => {
-            const Capacitor = (window as any).Capacitor;
-            const isNative = Capacitor?.isNativePlatform();
+            const isNative = Capacitor.isNativePlatform();
             
-            if (isNative && Capacitor?.Plugins?.LocalNotifications) {
+            if (isNative) {
                 try {
-                    const result = await Capacitor.Plugins.LocalNotifications.checkPermissions();
+                    const result = await LocalNotifications.checkPermissions();
                     if (result.display === 'denied') {
-                        // Already denied — don't re-request, show warning
                         setPermissionDenied(true);
                         return;
                     }
                     if (result.display !== 'granted') {
-                        const permission = await Capacitor.Plugins.LocalNotifications.requestPermissions();
+                        const permission = await LocalNotifications.requestPermissions();
                         if (permission.display === 'denied') {
                             setPermissionDenied(true);
                             console.warn("Notification permission denied by user");
@@ -74,13 +65,6 @@ export const NotificationManager: React.FC = () => {
                     }
                 } catch (e) {
                     console.error("Error checking notification permissions:", e);
-                }
-            } else if (typeof (window as any).cordova !== 'undefined') {
-                const cordova = (window as any).cordova;
-                if (cordova.plugins?.notification?.local) {
-                    cordova.plugins.notification.local.requestPermission((granted: boolean) => {
-                        if (!granted) setPermissionDenied(true);
-                    });
                 }
             } else if (typeof Notification !== 'undefined') {
                 if (Notification.permission === 'denied') {
@@ -262,23 +246,25 @@ export const NotificationManager: React.FC = () => {
             });
 
             // 1. Capacitor Native Scheduling (Preferred)
-            if (isNative && Capacitor?.Plugins?.LocalNotifications) {
+            if (isNative) {
                 try {
-                    await Capacitor.Plugins.LocalNotifications.cancel({ notifications: await Capacitor.Plugins.LocalNotifications.getPending().then((p: any) => p.notifications) });
+                    const pending = await LocalNotifications.getPending();
+                    if (pending.notifications && pending.notifications.length > 0) {
+                        await LocalNotifications.cancel({ notifications: pending.notifications });
+                    }
                     
                     const capNotifications = allEvents.map(e => ({
                         id: e.id,
                         title: 'NEURALIS',
                         body: e.msg,
-                        schedule: { at: e.targetDate },
+                        schedule: { at: new Date(e.time) },
                         extra: { module: e.module, type: e.type },
-                        sound: 'res://raw/notification.mp3', // Try to use custom sound if exists
-                        smallIcon: 'res://icon',
-                        largeIcon: 'res://icon'
+                        smallIcon: 'icon',
+                        largeIcon: 'icon'
                     }));
 
                     if (capNotifications.length > 0) {
-                        await Capacitor.Plugins.LocalNotifications.schedule({ notifications: capNotifications });
+                        await LocalNotifications.schedule({ notifications: capNotifications });
                     }
                 } catch (err) {
                     console.error("Capacitor Notification Error:", err);
@@ -343,10 +329,9 @@ export const NotificationManager: React.FC = () => {
     ]);
 
     const openAppSettings = () => {
-        const Capacitor = (window as any).Capacitor;
-        if (Capacitor?.isNativePlatform() && Capacitor?.Plugins?.App) {
+        if (Capacitor.isNativePlatform()) {
             // Opens Android app notification settings directly
-            Capacitor.Plugins.App.openUrl({ url: 'app-settings:' });
+            App.openUrl({ url: 'app-settings:' });
         }
     };
 
