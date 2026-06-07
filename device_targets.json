@@ -1,0 +1,14 @@
+{
+  "default": {
+    "version": "1.0.1",
+    "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.1/dist.zip",
+    "body": "Official production release with custom sound channels and notifications UI."
+  },
+  "targets": {
+    "sample-device-id-12345": {
+      "version": "1.0.2-beta",
+      "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.2-beta/dist.zip",
+      "body": "Beta release with experimental dashboard updates."
+    }
+  }
+}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { APP_VERSION } from '../../constants';
 import { useApp } from '../../context/AppContext';
 import { sound } from '../../utils/sound';
+import { getDeviceId } from '../../utils/deviceId';
 
 let Capacitor: any = null;
 let CapacitorUpdater: any = null;
@@ -77,31 +78,10 @@ export const UpdateManager: React.FC = () => {
                 showToast("Checking for updates...");
             }
             
-            const response = await fetch('https://api.github.com/repos/Abhinav-RM/neuralis/releases/latest');
+            // Fetch the device targets manifest file from Raw GitHub User Content (bypasses REST API rate limit)
+            const response = await fetch('https://raw.githubusercontent.com/Abhinav-RM/neuralis/main/device_targets.json');
             if (!response.ok) {
-                if (response.status === 404) {
-                    // Valid connection, but no releases: save this check attempt
-                    recentChecks.push(now);
-                    localStorage.setItem('neuralis_update_checks_log', JSON.stringify(recentChecks));
-                    if (isManual) {
-                        showToast(`Neuralis is up to date (v${APP_VERSION})`);
-                        sound.playSuccess();
-                    }
-                } else if (response.status === 403) {
-                    try {
-                        const errData = await response.json();
-                        if (errData.message && errData.message.toLowerCase().includes('rate limit')) {
-                            // If we hit GitHub's actual rate limit, mock a full log to disable auto checks for 1 hour
-                            const fullLog = Array(50).fill(now);
-                            localStorage.setItem('neuralis_update_checks_log', JSON.stringify(fullLog));
-                            if (isManual) showToast("GitHub rate limit exceeded. Try again in an hour.");
-                            return;
-                        }
-                    } catch (e) {}
-                    if (isManual) showToast("Access denied by GitHub");
-                } else {
-                    if (isManual) showToast("Error connecting to GitHub");
-                }
+                if (isManual) showToast("Error connecting to update server");
                 return;
             }
             
@@ -110,18 +90,22 @@ export const UpdateManager: React.FC = () => {
             localStorage.setItem('neuralis_update_checks_log', JSON.stringify(recentChecks));
 
             const data = await response.json();
-            const latestVersion = data.tag_name;
-            const body = data.body || 'No release notes provided.';
-            const htmlUrl = data.html_url;
-
-            // Find zip file asset
-            let zipUrl = '';
-            if (data.assets && Array.isArray(data.assets)) {
-                const zipAsset = data.assets.find((asset: any) => asset.name.endsWith('.zip'));
-                if (zipAsset) {
-                    zipUrl = zipAsset.browser_download_url;
+            const deviceId = getDeviceId();
+            
+            // Find target release for this device, fall back to default
+            const targetRelease = data.targets?.[deviceId] || data.default;
+            if (!targetRelease) {
+                if (isManual) {
+                    showToast(`Neuralis is up to date (v${APP_VERSION})`);
+                    sound.playSuccess();
                 }
+                return;
             }
+
+            const latestVersion = targetRelease.version;
+            const body = targetRelease.body || 'No release notes provided.';
+            const htmlUrl = targetRelease.htmlUrl || 'https://github.com/Abhinav-RM/neuralis/releases';
+            const zipUrl = targetRelease.zipUrl;
 
             if (isNewerVersion(APP_VERSION, latestVersion)) {
                 setUpdateInfo({

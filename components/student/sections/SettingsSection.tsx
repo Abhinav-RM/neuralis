@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import clsx from 'clsx';
-import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check } from 'lucide-react';
+import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check, Copy } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
-import { APP_VERSION } from '../../../constants';
+import { APP_VERSION, DEV_EMAIL } from '../../../constants';
+import { getDeviceId } from '../../../utils/deviceId';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -28,6 +29,24 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
 }) => {
     const [isAttCollapsed, setIsAttCollapsed] = useState(true);
     const [isCustCollapsed, setIsCustCollapsed] = useState(true);
+    
+    const deviceId = getDeviceId();
+    const [deviceIdCopied, setDeviceIdCopied] = useState(false);
+
+    const handleCopyDeviceId = () => {
+        sound.playClick();
+        navigator.clipboard.writeText(deviceId);
+        setDeviceIdCopied(true);
+        setTimeout(() => setDeviceIdCopied(false), 2000);
+    };
+
+    const handleRegisterBeta = () => {
+        sound.playClick();
+        const subject = encodeURIComponent(`Neuralis Beta Registration - ${state.studentName || 'Student'}`);
+        const body = encodeURIComponent(`Hi Abhinav,\n\nPlease register my device for Neuralis Beta updates.\n\nDevice ID: ${deviceId}\nName: ${state.studentName || 'Student'}\nPlatform: ${Capacitor.isNativePlatform() ? 'Android APK' : 'Web'}\n\nThanks!`);
+        window.location.href = `mailto:${DEV_EMAIL}?subject=${subject}&body=${body}`;
+    };
+
     const [presetsOpen, setPresetsOpen] = useState(true);
     const [colorsOpen, setColorsOpen] = useState(true);
     const [fontsOpen, setFontsOpen] = useState(true);
@@ -480,26 +499,48 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
             </div>
 
             {/* App Updates */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <Download size={18} className="text-blue-400 rotate-180 shrink-0" />
-                    <div>
-                        <h3 className="text-sm font-bold text-white">App Updates</h3>
-                        <p className="text-gray-400 text-[11px] mt-0.5">
-                            Current Version: <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/5">v{APP_VERSION}</span> • Checks GitHub for hot-updates and patches.
-                        </p>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Download size={18} className="text-blue-400 rotate-180 shrink-0" />
+                        <div>
+                            <h3 className="text-sm font-bold text-white">App Updates</h3>
+                            <p className="text-gray-400 text-[11px] mt-0.5">
+                                Current Version: <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/5">v{APP_VERSION}</span> • Checks for targeted OTA updates.
+                            </p>
+                        </div>
                     </div>
+                    <Button 
+                        variant="secondary" 
+                        className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto" 
+                        onClick={() => {
+                            sound.playClick();
+                            window.dispatchEvent(new CustomEvent('check-for-updates'));
+                        }}
+                    >
+                        Check for Updates
+                    </Button>
                 </div>
-                <Button 
-                    variant="secondary" 
-                    className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto" 
-                    onClick={() => {
-                        sound.playClick();
-                        window.dispatchEvent(new CustomEvent('check-for-updates'));
-                    }}
-                >
-                    Check for Updates
-                </Button>
+                
+                <div className="pt-3 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]">
+                    <div className="flex items-center gap-2 text-gray-400">
+                        <span>Device ID:</span>
+                        <span className="font-mono text-white bg-black/40 px-2 py-0.5 rounded border border-white/5">{deviceId}</span>
+                        <button 
+                            onClick={handleCopyDeviceId}
+                            className="text-blue-400 hover:text-blue-300 transition-colors p-1"
+                            title="Copy Device ID"
+                        >
+                            {deviceIdCopied ? <span className="text-emerald-400">Copied!</span> : <Copy size={12} />}
+                        </button>
+                    </div>
+                    <button
+                        onClick={handleRegisterBeta}
+                        className="text-blue-400 hover:underline font-semibold flex items-center gap-1 self-start sm:self-auto"
+                    >
+                        Register for Beta Updates &rarr;
+                    </button>
+                </div>
             </div>
 
             {/* Backup & Restore */}

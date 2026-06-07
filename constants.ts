@@ -13,3 +13,4 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 export const APP_VERSION = '1.0.1';
+export const DEV_EMAIL = 'abhinavrm.dev@gmail.com';
