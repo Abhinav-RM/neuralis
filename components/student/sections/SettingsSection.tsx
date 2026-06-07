@@ -632,7 +632,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                             <input 
                                 type="file" 
                                 ref={importFileInputRef}
-                                accept="application/json,.json" 
+                                accept="application/json,text/plain,.json" 
                                 onChange={handleFileImport} 
                                 className="hidden" 
                             />
