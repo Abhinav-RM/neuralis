@@ -60,6 +60,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const importFileInputRef = useRef<HTMLInputElement>(null);
     const [showRequestPermissionModal, setShowRequestPermissionModal] = useState(false);
     const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     const handleUploadClick = () => {
         sound.playClick();
@@ -147,46 +148,16 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
 
     const handleExport = async () => {
         try {
-            const backupJson = JSON.stringify(state, null, 2);
             const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform();
             
             if (isNative) {
-                // Check if Web Share API is supported (natively supported in modern Capacitor WebViews)
-                if (navigator.share) {
-                    try {
-                        // Try sharing as a file first
-                        const file = new File([backupJson], `neuralis_backup_${state.userName || 'user'}.json`, { type: 'application/json' });
-                        await navigator.share({
-                            files: [file],
-                            title: 'Neuralis Backup Data',
-                            text: 'Here is your Neuralis backup file.'
-                        });
-                        sound.playSuccess();
-                        return;
-                    } catch (shareErr) {
-                        console.log("File share failed, falling back to text share", shareErr);
-                        try {
-                            // Fallback to sharing as text
-                            await navigator.share({
-                                title: 'Neuralis Backup Data',
-                                text: backupJson
-                            });
-                            sound.playSuccess();
-                            return;
-                        } catch (textShareErr) {
-                            console.log("Text share also failed", textShareErr);
-                        }
-                    }
-                }
-
-                // Copy to clipboard as fallback and alert user
-                await navigator.clipboard.writeText(backupJson);
-                alert("Mobile Export: Due to Android WebView security restrictions, direct file downloads are disabled in the app. Your backup code has been copied to your clipboard instead! You can paste it in your notes or a text editor to save it.");
-                sound.playSuccess();
+                sound.playClick();
+                setShowExportModal(true);
                 return;
             }
 
             // Web browser always downloads standard file directly to local Downloads folder
+            const backupJson = JSON.stringify(state, null, 2);
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupJson);
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -769,6 +740,59 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                                  setShowResetConfirmModal(false);
                                  sound.playSuccess();
                              }}>Reset</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Mobile Export Modal */}
+            {showExportModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="max-w-sm w-full bg-[#121214] p-6 rounded-2xl border border-white/10 relative text-center shadow-2xl">
+                        <button 
+                            onClick={() => {
+                                sound.playClick();
+                                setShowExportModal(false);
+                            }} 
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={20}/>
+                        </button>
+                        <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Download size={24} />
+                        </div>
+                        <h3 className="text-xl font-bold mb-3 text-white">Export Backup Options</h3>
+                        <p className="text-gray-400 text-xs leading-relaxed mb-6 text-left">
+                            Due to Android WebView security restrictions, direct file downloads are disabled inside the mobile app. 
+                            <br/><br/>
+                            You can copy the data to your clipboard and paste it directly on the Import card. 
+                            Alternatively, if you want the actual file, copy this code, paste it into the Web version of Neuralis, and export it as a file there.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button 
+                                className="flex-1 bg-white/5 text-white hover:bg-white/10 text-xs font-semibold py-2.5" 
+                                onClick={() => {
+                                    sound.playClick();
+                                    setShowExportModal(false);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button 
+                                className="flex-1 bg-blue-500 text-white hover:bg-blue-600 text-xs font-semibold py-2.5" 
+                                onClick={async () => {
+                                    try {
+                                        const backupJson = JSON.stringify(state, null, 2);
+                                        await navigator.clipboard.writeText(backupJson);
+                                        sound.playSuccess();
+                                    } catch (err) {
+                                        sound.playError();
+                                    }
+                                    setShowExportModal(false);
+                                }}
+                            >
+                                Copy Backup Code
+                            </Button>
                         </div>
                     </div>
                 </div>
