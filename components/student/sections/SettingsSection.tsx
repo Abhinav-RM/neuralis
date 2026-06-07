@@ -163,14 +163,27 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                     return;
                 } catch (shareErr) {
                     console.log("File share failed, falling back to text share", shareErr);
-                    // Fallback to sharing as text
-                    await navigator.share({
-                        title: 'Neuralis Backup Data',
-                        text: backupJson
-                    });
-                    sound.playSuccess();
-                    return;
+                    try {
+                        // Fallback to sharing as text
+                        await navigator.share({
+                            title: 'Neuralis Backup Data',
+                            text: backupJson
+                        });
+                        sound.playSuccess();
+                        return;
+                    } catch (textShareErr) {
+                        console.log("Text share also failed", textShareErr);
+                    }
                 }
+            }
+
+            const isNative = typeof (window as any).Capacitor !== 'undefined';
+            if (isNative) {
+                // Copy to clipboard as fallback and alert user
+                await navigator.clipboard.writeText(backupJson);
+                alert("Mobile Export: Due to Android WebView security restrictions, direct file downloads are disabled in the app. Your backup code has been copied to your clipboard instead! You can paste it in your notes or a text editor to save it.");
+                sound.playSuccess();
+                return;
             }
 
             // Web browser fallback (standard anchor download)
