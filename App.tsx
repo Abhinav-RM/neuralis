@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { NotificationManager } from './components/managers/NotificationManager';
+import { UpdateManager } from './components/managers/UpdateManager';
 import { StudentOnboarding } from './components/student/StudentOnboarding';
 import { StudentDashboard } from './components/student/StudentDashboard';
 import { sound } from './utils/sound';
@@ -136,6 +137,7 @@ const App: React.FC = () => {
     return (
         <AppProvider>
             <NotificationManager />
+            <UpdateManager />
             <AppContent />
         </AppProvider>
     );

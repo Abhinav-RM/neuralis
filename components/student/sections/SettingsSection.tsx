@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
+import { APP_VERSION } from '../../../constants';
 
 interface SettingsSectionProps {
     state: any;
@@ -474,6 +475,27 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                     <Button variant="secondary" className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20" onClick={handleReset}>Change Name</Button>
                 </div>
                 <p className="text-gray-400 text-sm">Update your display name for dashboard greetings while preserving all your academic records.</p>
+            </div>
+
+            {/* App Updates */}
+            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-bold flex items-center gap-2"><Download size={20} className="text-blue-400 rotate-180" /> App Updates</h3>
+                    <Button 
+                        variant="secondary" 
+                        className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-xs font-semibold" 
+                        onClick={() => {
+                            sound.playClick();
+                            window.dispatchEvent(new CustomEvent('check-for-updates'));
+                        }}
+                    >
+                        Check for Updates
+                    </Button>
+                </div>
+                <p className="text-gray-400 text-sm">
+                    Current Version: <span className="font-mono text-white font-bold bg-white/5 px-2 py-0.5 rounded border border-white/5">v{APP_VERSION}</span>. 
+                    Checks GitHub for updates, downloads and applies them instantly.
+                </p>
             </div>
 
             {/* Backup & Restore */}
