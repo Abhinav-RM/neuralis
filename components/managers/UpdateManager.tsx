@@ -112,10 +112,17 @@ export const UpdateManager: React.FC = () => {
     useEffect(() => {
         // Run auto check on launch after a small delay to avoid competing with startup
         const timer = setTimeout(() => {
-            checkForUpdates(false);
+            const lastCheck = localStorage.getItem('neuralis_last_update_check');
+            const now = Date.now();
+            const oneDayMs = 24 * 60 * 60 * 1000;
+            
+            if (!lastCheck || now - parseInt(lastCheck, 10) > oneDayMs) {
+                checkForUpdates(false);
+                localStorage.setItem('neuralis_last_update_check', now.toString());
+            }
         }, 5000);
 
-        // Listen for manual check trigger from settings
+        // Listen for manual check trigger from settings (ignores the once-a-day throttle)
         const handleManualCheck = () => {
             checkForUpdates(true);
         };
