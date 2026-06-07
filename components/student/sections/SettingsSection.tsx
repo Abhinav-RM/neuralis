@@ -1,11 +1,9 @@
 import React, { useState, useRef } from 'react';
 import clsx from 'clsx';
-import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check, Copy, MessageSquare } from 'lucide-react';
+import { Lock, GraduationCap, Edit2, RotateCcw, AlertCircle, ChevronDown, ChevronUp, User, Download, Upload, X, Check, Copy } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
-import { APP_VERSION, DEV_EMAIL } from '../../../constants';
-import { getDeviceId } from '../../../utils/deviceId';
-import { Capacitor } from '@capacitor/core';
+import { APP_VERSION } from '../../../constants';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 interface SettingsSectionProps {
@@ -30,28 +28,23 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     const [isAttCollapsed, setIsAttCollapsed] = useState(true);
     const [isCustCollapsed, setIsCustCollapsed] = useState(true);
     
-    const deviceId = getDeviceId();
-    const [deviceIdCopied, setDeviceIdCopied] = useState(false);
+    const [updateInfo, setUpdateInfo] = useState<any>(() => {
+        if (typeof window !== 'undefined') {
+            return (window as any).neuralisUpdateInfo || null;
+        }
+        return null;
+    });
 
-    const handleCopyDeviceId = () => {
-        sound.playClick();
-        navigator.clipboard.writeText(deviceId);
-        setDeviceIdCopied(true);
-        setTimeout(() => setDeviceIdCopied(false), 2000);
-    };
-
-    const handleRequestUpdate = () => {
-        sound.playClick();
-        const subject = encodeURIComponent(`Neuralis Feedback & Update Request - ${state.studentName || 'Student'}`);
-        const body = encodeURIComponent(
-            `Hi Abhinav,\n\n` +
-            `Name: ${state.studentName || 'Student'}\n` +
-            `Device ID: ${deviceId}\n` +
-            `Platform: ${Capacitor.isNativePlatform() ? 'Android APK' : 'Web'}\n\n` +
-            `--- Write your message below (describe your request, bug report, or feedback, and feel free to attach screenshots) ---\n\n`
-        );
-        window.location.href = `mailto:${DEV_EMAIL}?subject=${subject}&body=${body}`;
-    };
+    React.useEffect(() => {
+        const handleUpdateInfoChanged = (e: Event) => {
+            const detail = (e as CustomEvent).detail;
+            setUpdateInfo(detail);
+        };
+        window.addEventListener('update-info-changed', handleUpdateInfoChanged);
+        return () => {
+            window.removeEventListener('update-info-changed', handleUpdateInfoChanged);
+        };
+    }, []);
 
     const [presetsOpen, setPresetsOpen] = useState(true);
     const [colorsOpen, setColorsOpen] = useState(true);
@@ -510,21 +503,46 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                     <Download size={18} className="text-blue-400 rotate-180 shrink-0" />
                     <div>
                         <h3 className="text-sm font-bold text-white">App Updates</h3>
-                        <p className="text-gray-400 text-[11px] mt-0.5">
-                            Current Version: <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/5">v{APP_VERSION}</span> • Checks for targeted OTA updates.
-                        </p>
+                        {updateInfo ? (
+                            <div className="flex flex-col gap-0.5 mt-0.5">
+                                <p className="text-emerald-400 text-[11px] font-bold flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    Update Available: v{updateInfo.version}
+                                </p>
+                                <p className="text-gray-500 text-[10px]">
+                                    Current Version: v{APP_VERSION}
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="text-gray-400 text-[11px] mt-0.5">
+                                Current Version: <span className="font-mono text-white font-bold bg-white/5 px-1.5 py-0.5 rounded border border-white/5">v{APP_VERSION}</span> • Checks for targeted OTA updates.
+                            </p>
+                        )}
                     </div>
                 </div>
-                <Button 
-                    variant="secondary" 
-                    className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto" 
-                    onClick={() => {
-                        sound.playClick();
-                        window.dispatchEvent(new CustomEvent('check-for-updates'));
-                    }}
-                >
-                    Check for Updates
-                </Button>
+                {updateInfo ? (
+                    <Button 
+                        variant="secondary" 
+                        className="bg-emerald-500/10 text-emerald-300 border-emerald-500/20 hover:bg-emerald-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto animate-pulse" 
+                        onClick={() => {
+                            sound.playClick();
+                            window.dispatchEvent(new CustomEvent('show-update-modal'));
+                        }}
+                    >
+                        View Details
+                    </Button>
+                ) : (
+                    <Button 
+                        variant="secondary" 
+                        className="bg-blue-500/10 text-blue-300 border-blue-500/20 hover:bg-blue-500/20 text-[11px] font-semibold py-1.5 px-3 whitespace-nowrap self-start sm:self-auto" 
+                        onClick={() => {
+                            sound.playClick();
+                            window.dispatchEvent(new CustomEvent('check-for-updates'));
+                        }}
+                    >
+                        Check for Updates
+                    </Button>
+                )}
             </div>
 
             {/* Backup & Restore */}
@@ -615,51 +633,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                 </div>
             </div>
 
-            {/* Feedback & Troubleshooting */}
-            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
-                <div>
-                    <h3 className="text-lg font-bold flex items-center gap-2 mb-1">
-                        <MessageSquare size={20} className="text-blue-400" /> Feedback & Troubleshooting
-                    </h3>
-                    <p className="text-gray-400 text-sm">
-                        Request targeted updates, report bugs, send screenshots, or share your feedback directly with the developer.
-                    </p>
-                </div>
 
-                <div className="pt-3 border-t border-white/5 flex flex-col gap-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-black/20 p-4 rounded-xl border border-white/5">
-                        <div className="space-y-1">
-                            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Device ID & OTA Updates</h4>
-                            <p className="text-[11px] text-gray-500">
-                                Share this identifier if you are requesting a targeted OTA update for your specific device.
-                            </p>
-                            <div className="flex items-center gap-2 pt-1 text-[11px]">
-                                <span className="text-gray-400">Your Device ID:</span>
-                                <span className="font-mono text-white bg-black/40 px-2 py-0.5 rounded border border-white/5 select-all">{deviceId}</span>
-                                <button 
-                                    onClick={handleCopyDeviceId}
-                                    className="text-blue-400 hover:text-blue-300 transition-colors p-1"
-                                    title="Copy Device ID"
-                                >
-                                    {deviceIdCopied ? <span className="text-emerald-400 font-bold">Copied!</span> : <Copy size={12} />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-                        <p className="text-xs text-gray-400 max-w-md font-medium">
-                            Click below to open your email client. You can attach screenshots, suggest changes, or describe any issues you have encountered.
-                        </p>
-                        <Button 
-                            onClick={handleRequestUpdate} 
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 text-xs whitespace-nowrap self-start sm:self-auto"
-                        >
-                            Request Update / Send Feedback
-                        </Button>
-                    </div>
-                </div>
-            </div>
 
             {/* Backup Import Confirmation Modal */}
             {pendingImportData && (

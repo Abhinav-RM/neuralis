@@ -108,12 +108,17 @@ export const UpdateManager: React.FC = () => {
             const zipUrl = targetRelease.zipUrl;
 
             if (isNewerVersion(APP_VERSION, latestVersion)) {
-                setUpdateInfo({
+                const info = {
                     version: latestVersion,
                     body,
                     zipUrl,
                     htmlUrl
-                });
+                };
+                setUpdateInfo(info);
+                if (typeof window !== 'undefined') {
+                    (window as any).neuralisUpdateInfo = info;
+                    window.dispatchEvent(new CustomEvent('update-info-changed', { detail: info }));
+                }
                 setShowModal(true);
                 sound.playLevelUp();
             } else if (isManual) {
@@ -137,11 +142,20 @@ export const UpdateManager: React.FC = () => {
             checkForUpdates(true);
         };
 
+        const handleShowModal = () => {
+            if (typeof window !== 'undefined' && (window as any).neuralisUpdateInfo) {
+                setUpdateInfo((window as any).neuralisUpdateInfo);
+                setShowModal(true);
+            }
+        };
+
         window.addEventListener('check-for-updates', handleManualCheck);
+        window.addEventListener('show-update-modal', handleShowModal);
 
         return () => {
             clearTimeout(timer);
             window.removeEventListener('check-for-updates', handleManualCheck);
+            window.removeEventListener('show-update-modal', handleShowModal);
         };
     }, []);
 

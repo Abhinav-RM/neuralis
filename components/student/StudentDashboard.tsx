@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { motion } from 'framer-motion';
-import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw, Sun, Moon, Monitor, User } from 'lucide-react';
+import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw, Sun, Moon, Monitor, User, MessageSquare } from 'lucide-react';
 import { Button } from '../ui/Button';
 import clsx from 'clsx';
 import { NeuralisLogo } from '../ui/NeuralisLogo';
@@ -14,6 +14,7 @@ import { TimetableSection } from './sections/TimetableSection';
 import { TasksSection } from './sections/TasksSection';
 import { NotificationsSection } from './sections/NotificationsSection';
 import { SettingsSection } from './sections/SettingsSection';
+import { FeedbackSection } from './sections/FeedbackSection';
 
 const getGreeting = (time: Date, userName?: string, casing?: 'caps' | 'small' | 'mix') => {
     const hrs = time.getHours();
@@ -324,7 +325,7 @@ export const StudentDashboard: React.FC = () => {
         return () => mediaQuery.removeEventListener('change', listener);
     }, [state.theme]);
 
-    type Tab = 'overview' | 'attendance' | 'timetable' | 'tasks' | 'settings' | 'notifications';
+    type Tab = 'overview' | 'attendance' | 'timetable' | 'tasks' | 'settings' | 'notifications' | 'feedback';
     const SECTIONS: { id: Tab; label: string; icon: React.ElementType }[] = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'attendance', label: 'Attendance', icon: GraduationCap },
@@ -332,6 +333,7 @@ export const StudentDashboard: React.FC = () => {
         { id: 'tasks', label: 'Tasks & Exams', icon: CheckSquare },
         { id: 'notifications', label: 'Notifications', icon: Bell },
         { id: 'settings', label: 'Settings', icon: SettingsIcon },
+        { id: 'feedback', label: 'Feedback & Support', icon: MessageSquare },
     ];
 
     useEffect(() => {
@@ -844,6 +846,10 @@ export const StudentDashboard: React.FC = () => {
                             themePresets={THEME_PRESETS}
                             importData={importData}
                         />
+                    )}
+
+                    {activeSection === 'feedback' && (
+                        <FeedbackSection state={state} />
                     )}
                 </main>
             </div>
