@@ -73,9 +73,21 @@ export const UpdateManager: React.FC = () => {
             return;
         }
 
+        const isNative = Capacitor && Capacitor.isNativePlatform();
+
         try {
             if (isManual) {
                 showToast("Checking for updates...");
+            }
+            
+            if (!isNative) {
+                if (isManual) {
+                    setTimeout(() => {
+                        showToast(`Neuralis is up to date (v${APP_VERSION})`);
+                        sound.playSuccess();
+                    }, 800);
+                }
+                return;
             }
             
             // Fetch the device targets manifest file from Raw GitHub User Content (bypasses REST API rate limit)
