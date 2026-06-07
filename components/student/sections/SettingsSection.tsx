@@ -145,9 +145,36 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
         reader.readAsText(file);
     };
 
-    const handleExport = () => {
+    const handleExport = async () => {
         try {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const backupJson = JSON.stringify(state, null, 2);
+            
+            // Check if Web Share API is supported (natively supported in modern Capacitor WebViews)
+            if (navigator.share) {
+                try {
+                    // Try sharing as a file first
+                    const file = new File([backupJson], `neuralis_backup_${state.userName || 'user'}.json`, { type: 'application/json' });
+                    await navigator.share({
+                        files: [file],
+                        title: 'Neuralis Backup Data',
+                        text: 'Here is your Neuralis backup file.'
+                    });
+                    sound.playSuccess();
+                    return;
+                } catch (shareErr) {
+                    console.log("File share failed, falling back to text share", shareErr);
+                    // Fallback to sharing as text
+                    await navigator.share({
+                        title: 'Neuralis Backup Data',
+                        text: backupJson
+                    });
+                    sound.playSuccess();
+                    return;
+                }
+            }
+
+            // Web browser fallback (standard anchor download)
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupJson);
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
             downloadAnchor.setAttribute("download", `neuralis_backup_${state.userName || 'user'}.json`);
@@ -156,6 +183,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
             downloadAnchor.remove();
             sound.playSuccess();
         } catch (err) {
+            console.error("Export failed:", err);
             sound.playError();
         }
     };
