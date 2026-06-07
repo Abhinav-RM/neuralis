@@ -12,6 +12,12 @@ if (typeof window !== 'undefined') {
     if (Capacitor?.isNativePlatform()) {
         import('@capgo/capacitor-updater').then((m) => {
             CapacitorUpdater = m.CapacitorUpdater;
+            // Notify Capgo that the app successfully booted, preventing rollbacks
+            CapacitorUpdater.notifyAppReady().then(() => {
+                console.log("CapacitorUpdater: notifyAppReady successfully called.");
+            }).catch((err: any) => {
+                console.error("CapacitorUpdater: notifyAppReady failed", err);
+            });
         }).catch(err => console.error("Failed to load CapacitorUpdater plugin", err));
     }
 }

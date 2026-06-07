@@ -1,19 +1,8 @@
 {
   "default": {
-    "version": "1.0.6",
-    "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.6/dist.zip",
-    "body": "v1.0.6 OTA Update: Fixes import file select compatibility on Android devices."
+    "version": "1.0.8",
+    "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.8/dist.zip",
+    "body": "v1.0.8 OTA Update: Includes premium export modal, Android file import support, and rollback fix."
   },
-  "targets": {
-    "neu_lsxyrycva3o3": {
-      "version": "1.0.7",
-      "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.7-targeted/dist.zip",
-      "body": "v1.0.7-targeted OTA Update: Adds premium export modal with clipboard copy fallback and alternative web instructions."
-    },
-    "sample-device-id-12345": {
-      "version": "1.0.2-beta",
-      "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.2-beta/dist.zip",
-      "body": "Beta release with experimental dashboard updates."
-    }
-  }
+  "targets": {}
 }
