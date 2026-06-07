@@ -83,17 +83,48 @@ const AppContent: React.FC = () => {
 
     const showPermissionModal = state.football.customization.storagePermission === 'prompt';
 
-    const handleGrantPermission = () => {
+    const requestSystemPermission = async () => {
+        const isNative = (window as any).Capacitor?.isNativePlatform();
+        if (isNative) {
+            try {
+                const permission = await (window as any).Capacitor.Plugins.LocalNotifications.requestPermissions();
+                return permission.display === 'granted';
+            } catch (e) {
+                console.error(e);
+            }
+        } else if (typeof (window as any).cordova !== 'undefined' && (window as any).cordova.plugins?.notification?.local) {
+            return new Promise<boolean>((resolve) => {
+                (window as any).cordova.plugins.notification.local.requestPermission((granted: boolean) => {
+                    resolve(granted);
+                });
+            });
+        } else if (typeof Notification !== 'undefined') {
+            try {
+                const result = await Notification.requestPermission();
+                return result === 'granted';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return true; 
+    };
+
+    const handleGrantPermission = async () => {
+        const granted = await requestSystemPermission();
         updateState({
             football: {
                 ...state.football,
                 customization: {
                     ...state.football.customization,
-                    storagePermission: 'granted'
+                    storagePermission: granted ? 'granted' : 'denied'
                 }
             }
         });
-        sound.playSuccess();
+        if (granted) {
+            sound.playSuccess();
+        } else {
+            sound.playError();
+        }
     };
 
     const handleDenyPermission = () => {

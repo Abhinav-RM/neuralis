@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { GraduationCap } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import clsx from 'clsx';
+import { NeuralisLogo } from './NeuralisLogo';
 
 interface NeutralLoadingScreenProps {
     progress: number;
@@ -65,8 +66,8 @@ export const NeutralLoadingScreen: React.FC<NeutralLoadingScreenProps> = ({ prog
                                 : "bg-[#131316] border border-white/10 shadow-[0_0_20px_rgba(59,130,246,0.15)]"
                         )}
                     >
-                        <GraduationCap className={clsx(
-                            "w-8 h-8 transition-colors duration-300",
+                        <NeuralisLogo size={36} className={clsx(
+                            "w-9 h-9 transition-colors duration-300",
                             isLight ? "text-blue-600" : "text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.6)]"
                         )} />
                     </motion.div>

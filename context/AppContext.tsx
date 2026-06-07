@@ -414,8 +414,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Refs for football/gym — avoids triggering the daily effect on every XP/training change
     const footballRef = React.useRef(state.football);
     const gymRef = React.useRef(state.gym);
+    const collegeRef = React.useRef(state.college);
     React.useEffect(() => { footballRef.current = state.football; }, [state.football]);
     React.useEffect(() => { gymRef.current = state.gym; }, [state.gym]);
+    React.useEffect(() => { collegeRef.current = state.college; }, [state.college]);
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -552,6 +554,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const gymTotalHours = Object.values(gymHistory).reduce((acc, curr: any) => acc + (curr.duration || 0), 0);
             const gymTotalSessions = Object.values(gymHistory).filter((e: any) => e.completed).length;
 
+            const college = collegeRef.current;
+            const attendanceHistoryUpdates = { ...college.attendanceHistory };
+            if (state.midnightLock) {
+                Object.keys(attendanceHistoryUpdates).forEach(key => {
+                    if (key < todayKey && !attendanceHistoryUpdates[key].locked) {
+                        attendanceHistoryUpdates[key] = { ...attendanceHistoryUpdates[key], locked: true };
+                    }
+                });
+            }
+
             updateState({
                 dailyBounties: {
                     date: todayKey,
@@ -568,11 +580,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     ...gymUpdates,
                     totalTrainingHours: gymTotalHours,
                     totalTrainingSessions: gymTotalSessions
+                },
+                college: {
+                    ...college,
+                    attendanceHistory: attendanceHistoryUpdates
                 }
             });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isLoaded, state.college.lastDailyCheck, state.dailyBounties.date, updateState, updateCollege]);
+    }, [isLoaded, state.college.lastDailyCheck, state.dailyBounties.date, state.midnightLock, updateState, updateCollege]);
 
     const completeBounty = useCallback((id: string) => {
         setState(prev => {

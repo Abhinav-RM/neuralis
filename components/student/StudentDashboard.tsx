@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, Calendar, CheckSquare, Clock, Settings as SettingsIcon, LogOut, Plus, Check, Trash2, AlertCircle, GraduationCap, Edit2, Save, X, CreditCard, ChevronLeft, ChevronRight, Lock, Menu, LayoutDashboard, Bell, ChevronDown, ChevronUp, RotateCcw, Sun, Moon, Monitor, User } from 'lucide-react';
 import { Button } from '../ui/Button';
 import clsx from 'clsx';
+import { NeuralisLogo } from '../ui/NeuralisLogo';
 import { getDateKey } from '../../utils/helpers';
 import { sound } from '../../utils/sound';
 import { AttendanceRecord } from '../../types';
@@ -80,7 +81,9 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
         const isPast = date < today;
         const isEntryFromToday = record && record.timestamp && getDateKey(new Date(record.timestamp)) === getDateKey(new Date());
 
-        if (isPast && record && !isEntryFromToday) {
+        const isLocked = !!(record?.locked || (state.midnightLock && isPast && record && !isEntryFromToday));
+
+        if (isLocked) {
             setSelectedDate(date);
             setShowSealedModal(true);
             sound.playError();
@@ -149,7 +152,7 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
                     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                     const isPast = date < today;
                     const isEntryFromToday = record && record.timestamp && getDateKey(new Date(record.timestamp)) === getDateKey(new Date());
-                    const isLocked = state.midnightLock && isPast && record && !isEntryFromToday;
+                    const isLocked = !!(record?.locked || (state.midnightLock && isPast && record && !isEntryFromToday));
 
                     return (
                         <button
@@ -653,16 +656,10 @@ export const StudentDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen text-white font-sans selection:bg-blue-500/30 flex relative overflow-hidden" style={bgStyle}>
-            {/* Visual Overlays */}
-            <div className={clsx("absolute inset-0 -z-10 transition-colors duration-300", isLight ? "hidden" : "bg-black/45")} />
-            <div className="fixed inset-0 pointer-events-none z-[10] opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
-            {!isLight && (
-                <div className="fixed inset-0 pointer-events-none z-[10] opacity-40 bg-[radial-gradient(circle_at_center,_transparent_60%,_black_100%)]" />
-            )}
-
+            {/* Background Image & Overlays */}
             {backgroundImage && (
                 <div 
-                    className="absolute inset-0 -z-20 transition-all duration-300"
+                    className="absolute inset-0 z-0 pointer-events-none transition-all duration-300"
                     style={{
                         backgroundImage: `url(${backgroundImage})`,
                         backgroundSize: `${bgZoom}%`,
@@ -671,6 +668,13 @@ export const StudentDashboard: React.FC = () => {
                         transform: 'scale(1.05)'
                     }}
                 />
+            )}
+
+            {/* Visual Overlays */}
+            <div className={clsx("absolute inset-0 z-[1] pointer-events-none transition-colors duration-300", isLight ? "hidden" : "bg-black/45")} />
+            <div className="fixed inset-0 pointer-events-none z-[10] opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))', backgroundSize: '100% 2px, 3px 100%' }} />
+            {!isLight && (
+                <div className="fixed inset-0 pointer-events-none z-[10] opacity-40 bg-[radial-gradient(circle_at_center,_transparent_60%,_black_100%)]" />
             )}
 
 
@@ -688,13 +692,15 @@ export const StudentDashboard: React.FC = () => {
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="p-6 border-b border-white/10 flex justify-between items-center">
-                    <div>
-                        <h2 className="font-logo font-bold text-lg tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-accent to-white uppercase">
-                            NEURALIS
-                        </h2>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-                            Student OS
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <div>
+                            <h2 className="font-logo font-bold text-lg tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-accent to-white uppercase">
+                                NEURALIS
+                            </h2>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">
+                                Student OS
+                            </p>
+                        </div>
                     </div>
                     <button className="lg:hidden text-2xl text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}><X size={24}/></button>
                 </div>
@@ -726,7 +732,7 @@ export const StudentDashboard: React.FC = () => {
             </div>
 
             {/* Main Content Area */}
-            <div className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full">
+            <div className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full relative z-10">
                 {/* Mobile Header */}
                 <header className="lg:hidden px-6 py-4 bg-transparent sticky top-0 z-30 flex items-center justify-between">
                     <div className="flex items-center gap-3">

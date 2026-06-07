@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sound } from '../../utils/sound';
 import { BookOpen } from 'lucide-react';
+import { NeuralisLogo } from '../ui/NeuralisLogo';
 
 export const StudentOnboarding: React.FC = () => {
     const { updateState } = useApp();
@@ -28,7 +29,7 @@ export const StudentOnboarding: React.FC = () => {
                 className="z-10 max-w-md w-full bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-xl"
             >
                 <div className="w-16 h-16 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6 border border-blue-500/30 mx-auto">
-                    <BookOpen size={32} className="text-blue-400" />
+                    <NeuralisLogo size={36} />
                 </div>
                 <h1 className="text-3xl font-display font-bold text-center mb-2">Welcome Scholar</h1>
                 <p className="text-gray-400 text-center text-sm mb-8">Let's set up your academic workspace.</p>

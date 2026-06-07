@@ -73,6 +73,32 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
         reader.readAsDataURL(file);
     };
 
+    const requestSystemPermission = async () => {
+        const isNative = (window as any).Capacitor?.isNativePlatform();
+        if (isNative) {
+            try {
+                const permission = await (window as any).Capacitor.Plugins.LocalNotifications.requestPermissions();
+                return permission.display === 'granted';
+            } catch (e) {
+                console.error(e);
+            }
+        } else if (typeof (window as any).cordova !== 'undefined' && (window as any).cordova.plugins?.notification?.local) {
+            return new Promise<boolean>((resolve) => {
+                (window as any).cordova.plugins.notification.local.requestPermission((granted: boolean) => {
+                    resolve(granted);
+                });
+            });
+        } else if (typeof Notification !== 'undefined') {
+            try {
+                const result = await Notification.requestPermission();
+                return result === 'granted';
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        return true; 
+    };
+
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -569,19 +595,23 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                         </p>
                         <div className="flex gap-3">
                             <Button className="flex-1 bg-white/5 text-white hover:bg-white/10" onClick={() => setShowRequestPermissionModal(false)}>Cancel</Button>
-                            <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={() => {
+                             <Button className="flex-1 bg-blue-500 text-white hover:bg-blue-600" onClick={async () => {
+                                const granted = await requestSystemPermission();
                                 updateFootball({
                                     customization: {
                                         ...cust,
-                                        storagePermission: 'granted'
+                                        storagePermission: granted ? 'granted' : 'denied'
                                     }
                                 });
                                 setShowRequestPermissionModal(false);
-                                sound.playSuccess();
-                                // Open file picker after state update
-                                setTimeout(() => {
-                                    fileInputRef.current?.click();
-                                }, 100);
+                                if (granted) {
+                                    sound.playSuccess();
+                                    setTimeout(() => {
+                                        fileInputRef.current?.click();
+                                    }, 100);
+                                } else {
+                                    sound.playError();
+                                }
                             }}>Grant</Button>
                         </div>
                     </div>
