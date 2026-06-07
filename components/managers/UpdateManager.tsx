@@ -49,13 +49,25 @@ export const UpdateManager: React.FC = () => {
     };
 
     const checkForUpdates = async (isManual = false) => {
-        const lastCheck = localStorage.getItem('neuralis_last_update_check');
         const now = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
+        const oneHourMs = 60 * 60 * 1000;
 
-        if (lastCheck && now - parseInt(lastCheck, 10) < oneDayMs) {
+        // Load recent check history
+        let checksLog: number[] = [];
+        try {
+            const raw = localStorage.getItem('neuralis_update_checks_log');
+            if (raw) {
+                checksLog = JSON.parse(raw);
+            }
+        } catch (e) {}
+
+        // Filter for checks in the last 1 hour
+        const recentChecks = checksLog.filter(ts => now - ts < oneHourMs);
+
+        // Safeguard block: if we've checked 50 or more times in the last hour
+        if (recentChecks.length >= 50) {
             if (isManual) {
-                showToast("Already checked for updates today.");
+                showToast("Rate limit safeguard active. Try again in an hour.");
             }
             return;
         }
@@ -68,8 +80,9 @@ export const UpdateManager: React.FC = () => {
             const response = await fetch('https://api.github.com/repos/Abhinav-RM/neuralis/releases/latest');
             if (!response.ok) {
                 if (response.status === 404) {
-                    // Valid connection, but no releases: update check timestamp
-                    localStorage.setItem('neuralis_last_update_check', now.toString());
+                    // Valid connection, but no releases: save this check attempt
+                    recentChecks.push(now);
+                    localStorage.setItem('neuralis_update_checks_log', JSON.stringify(recentChecks));
                     if (isManual) {
                         showToast(`Neuralis is up to date (v${APP_VERSION})`);
                         sound.playSuccess();
@@ -78,6 +91,9 @@ export const UpdateManager: React.FC = () => {
                     try {
                         const errData = await response.json();
                         if (errData.message && errData.message.toLowerCase().includes('rate limit')) {
+                            // If we hit GitHub's actual rate limit, mock a full log to disable auto checks for 1 hour
+                            const fullLog = Array(50).fill(now);
+                            localStorage.setItem('neuralis_update_checks_log', JSON.stringify(fullLog));
                             if (isManual) showToast("GitHub rate limit exceeded. Try again in an hour.");
                             return;
                         }
@@ -89,8 +105,9 @@ export const UpdateManager: React.FC = () => {
                 return;
             }
             
-            // Valid connection and release found: update check timestamp
-            localStorage.setItem('neuralis_last_update_check', now.toString());
+            // Successful API contact: save this check attempt
+            recentChecks.push(now);
+            localStorage.setItem('neuralis_update_checks_log', JSON.stringify(recentChecks));
 
             const data = await response.json();
             const latestVersion = data.tag_name;
