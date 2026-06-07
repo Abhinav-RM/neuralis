@@ -119,6 +119,13 @@ export const UpdateManager: React.FC = () => {
                     (window as any).neuralisUpdateInfo = info;
                     window.dispatchEvent(new CustomEvent('update-info-changed', { detail: info }));
                 }
+                
+                // If this version was previously dismissed with "Later", do not auto-popup
+                const ignoredVersion = localStorage.getItem('neuralis_ignored_update_version');
+                if (ignoredVersion === latestVersion && !isManual) {
+                    return;
+                }
+
                 setShowModal(true);
                 sound.playLevelUp();
             } else if (isManual) {
@@ -291,6 +298,9 @@ export const UpdateManager: React.FC = () => {
                         <>
                             <button
                                 onClick={() => {
+                                    if (updateInfo) {
+                                        localStorage.setItem('neuralis_ignored_update_version', updateInfo.version);
+                                    }
                                     setShowModal(false);
                                     sound.playClick();
                                 }}
