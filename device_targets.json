@@ -1,8 +1,8 @@
 {
   "default": {
-    "version": "1.0.2",
-    "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.2/dist.zip",
-    "body": "New version v1.0.2: Includes the brand new Feedback & Troubleshooting section!"
+    "version": "1.0.4",
+    "zipUrl": "https://github.com/Abhinav-RM/neuralis/releases/download/v1.0.4/dist.zip",
+    "body": "v1.0.4 OTA Update: Adds native sharing for backup exports, Android JSON file chooser compatibility, and separates the Feedback tab."
   },
   "targets": {
     "sample-device-id-12345": {
