@@ -62,6 +62,14 @@ export const AttendanceSection = React.memo<AttendanceSectionProps>(({
                         <span>Target: 75%</span>
                         <span>{effectivePresent} / {totalCalcDays} Days</span>
                     </div>
+                    <div className="mt-3 border-t border-white/5 pt-2 text-right space-y-1">
+                        <p className="text-[10px] text-gray-500 italic">
+                            * Unmarked days will be counted as Holiday
+                        </p>
+                        <p className="text-[10px] text-gray-500 italic">
+                            * Please verify that your past attendance matches official records. Report any discrepancies to the developer.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="border-t border-white/10 pt-6">

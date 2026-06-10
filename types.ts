@@ -119,6 +119,7 @@ export interface AppState {
     startDate: string | null;
     dob: string | null;
     currentModule: ModuleType;
+    hasOnboarded: boolean;
     userName?: string;
     college: CollegeState;
     customization: CustomizationState;

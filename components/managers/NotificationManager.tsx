@@ -422,7 +422,7 @@ export const NotificationManager: React.FC = () => {
 
     const openAppSettings = () => {
         if (Capacitor.isNativePlatform()) {
-            App.openUrl({ url: 'app-settings:' });
+            (App as any).openUrl({ url: 'app-settings:' });
         }
     };
 

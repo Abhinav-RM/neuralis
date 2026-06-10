@@ -16,6 +16,7 @@
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/local-notifications": "^8.2.0",
+    "@capacitor/share": "^8.0.1",
     "@capgo/capacitor-updater": "^8.47.10",
     "cls": "^0.1.5",
     "clsx": "^2.1.1",

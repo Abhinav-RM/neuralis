@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, CollegeState, CustomizationState, ModuleType } from '../types';
 import { DEFAULT_COLLEGE_TIMETABLE, INITIAL_ACHIEVEMENTS } from '../constants';
 import { getDateKey } from '../utils/helpers';
@@ -92,14 +92,74 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [state, setState] = useState<AppState>(INITIAL_STATE);
     const [isLoaded, setIsLoaded] = useState(false);
+    const stateRef = useRef(state);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const persist = useCallback((newState: AppState) => {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-        } catch (e) {
-            console.error("Failed to save state", e);
+    // Keep stateRef up to date with the latest state
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
+
+    const persist = useCallback((newState: AppState, forceImmediate = false) => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+            saveTimeoutRef.current = null;
+        }
+
+        const performSave = () => {
+            try {
+                // Separate the heavy wallpaper text string from core data before committing to disk
+                const stateToPersist = {
+                    ...newState,
+                    customization: {
+                        ...newState.customization,
+                        backgroundImage: null // Keep the main state key clear of large asset text
+                    }
+                };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToPersist));
+            } catch (e) {
+                console.error("Failed to save state", e);
+            }
+        };
+
+        if (forceImmediate) {
+            performSave();
+        } else {
+            // 2-second debounce wrapper
+            saveTimeoutRef.current = setTimeout(() => {
+                performSave();
+                saveTimeoutRef.current = null;
+            }, 2000);
         }
     }, []);
+
+    // Listen for mobile backgrounding events to force a final, synchronous save instantly
+    useEffect(() => {
+        const setupAppListener = async () => {
+            try {
+                const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform();
+                if (isNative) {
+                    const { App: CapApp } = await import('@capacitor/app');
+                    const handleAppStateChange = ({ isActive }: { isActive: boolean }) => {
+                        if (!isActive) {
+                            persist(stateRef.current, true);
+                        }
+                    };
+                    const listener = await CapApp.addListener('appStateChange', handleAppStateChange);
+                    return () => {
+                        listener.remove();
+                    };
+                }
+            } catch (e) {
+                console.error("Failed to setup App state listener", e);
+            }
+        };
+
+        const cleanupPromise = setupAppListener();
+        return () => {
+            cleanupPromise.then(cleanup => cleanup && cleanup());
+        };
+    }, [persist]);
 
     const updateState = useCallback((updates: Partial<AppState>) => {
         setState(prev => {
@@ -111,6 +171,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updateCustomization = useCallback((updates: Partial<CustomizationState>) => {
         setState(prev => {
+            // Isolate base64 wallpaper asset storage from the main key
+            if (updates.backgroundImage !== undefined) {
+                try {
+                    if (updates.backgroundImage) {
+                        localStorage.setItem('neuralis_wallpaper', updates.backgroundImage);
+                    } else {
+                        localStorage.removeItem('neuralis_wallpaper');
+                    }
+                } catch (e) {
+                    console.error("Failed to save wallpaper to storage", e);
+                }
+            }
             const next = { ...prev, customization: { ...prev.customization, ...updates } };
             persist(next);
             return next;
@@ -132,7 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             console.error("Failed to clear storage", e);
         }
         setState(INITIAL_STATE);
-        persist(INITIAL_STATE);
+        persist(INITIAL_STATE, true);
         sound.playClick();
     }, [persist]);
 
@@ -167,8 +239,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         delete (cleaned as any).coins;
         delete (cleaned as any).userType;
 
+        // Isolate base64 wallpaper if imported
+        const wallpaper = cleaned.customization.backgroundImage;
+        try {
+            if (wallpaper) {
+                localStorage.setItem('neuralis_wallpaper', wallpaper);
+            } else {
+                localStorage.removeItem('neuralis_wallpaper');
+            }
+        } catch (e) {
+            console.error("Failed to save imported wallpaper", e);
+        }
+
         setState(cleaned);
-        persist(cleaned);
+        persist(cleaned, true); // Force immediate save for imported data
         sound.playLevelUp();
     }, [persist]);
 
@@ -187,6 +271,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 if (parsed && typeof parsed === 'object') {
                     if (!parsed.customization && parsed.football && parsed.football.customization) {
                         parsed.customization = parsed.football.customization;
+                    }
+                    
+                    // Retrieve isolated wallpaper from storage if present
+                    try {
+                        const wallpaper = localStorage.getItem('neuralis_wallpaper');
+                        if (parsed.customization) {
+                            parsed.customization.backgroundImage = wallpaper;
+                        }
+                    } catch (e) {
+                        console.error("Failed to load wallpaper from storage", e);
                     }
                     
                     if (parsed.customization) {

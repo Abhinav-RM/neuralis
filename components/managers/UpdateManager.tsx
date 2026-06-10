@@ -15,6 +15,12 @@ if (typeof window !== 'undefined') {
             // Notify Capgo that the app successfully booted, preventing rollbacks
             CapacitorUpdater.notifyAppReady().then(() => {
                 console.log("CapacitorUpdater: notifyAppReady successfully called.");
+                // Clean up legacy versions to prevent storage hoarding
+                CapacitorUpdater.clean().then(() => {
+                    console.log("CapacitorUpdater: Legacy cache cleaned successfully");
+                }).catch((cleanErr: any) => {
+                    console.warn("CapacitorUpdater: Cache cleaning failed", cleanErr);
+                });
             }).catch((err: any) => {
                 console.error("CapacitorUpdater: notifyAppReady failed", err);
             });

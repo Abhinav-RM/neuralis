@@ -15,6 +15,7 @@ import { TasksSection } from './sections/TasksSection';
 import { NotificationsSection } from './sections/NotificationsSection';
 import { SettingsSection } from './sections/SettingsSection';
 import { FeedbackSection } from './sections/FeedbackSection';
+import { APP_VERSION } from '../../constants';
 
 const getGreeting = (time: Date, userName?: string, casing?: 'caps' | 'small' | 'mix') => {
     const hrs = time.getHours();
@@ -154,6 +155,7 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
                     const isPast = date < today;
                     const isEntryFromToday = record && record.timestamp && getDateKey(new Date(record.timestamp)) === getDateKey(new Date());
                     const isLocked = !!(record?.locked || (state.midnightLock && isPast && record && !isEntryFromToday));
+                    const status = record?.status || (isPast && !isWeekend ? 'absent-college' : undefined);
 
                     return (
                         <button
@@ -163,10 +165,10 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
                             className={clsx(
                                 "aspect-square rounded-xl border transition-all flex flex-col items-center justify-center relative group",
                                 isToday ? "border-blue-500 bg-blue-500/10" : "border-white/5",
-                                record?.status === 'present' ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" :
-                                record?.status === 'leave' ? "bg-amber-500/20 border-amber-500/30 text-amber-400" :
-                                record?.status === 'absent-personal' ? "bg-rose-500/20 border-rose-500/30 text-rose-400" :
-                                (record?.status === 'absent-college' || isWeekend) ? "bg-gray-500/20 border-gray-500/30 text-gray-400" :
+                                status === 'present' ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400" :
+                                status === 'leave' ? "bg-amber-500/20 border-amber-500/30 text-amber-400" :
+                                status === 'absent-personal' ? "bg-rose-500/20 border-rose-500/30 text-rose-400" :
+                                (status === 'absent-college' || isWeekend) ? "bg-gray-500/20 border-gray-500/30 text-gray-400" :
                                 "bg-black/20 hover:bg-white/5 text-gray-300",
                                 date > today && !isWeekend && "opacity-30 cursor-not-allowed"
                             )}
@@ -179,10 +181,15 @@ const StudentCalendar = ({ currentDate, setCurrentDate }: { currentDate: Date; s
                 })}
             </div>
 
-            <div className="mt-4 flex flex-wrap justify-center gap-4 text-[10px] uppercase tracking-widest font-bold pt-4 border-t border-white/5">
-                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div><span className="text-emerald-400">Present</span></div>
-                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-rose-500/20 border border-rose-500/40"></div><span className="text-rose-400">Absent</span></div>
-                <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-500/20 border border-gray-500/40"></div><span className="text-gray-400">Holiday/Weekend</span></div>
+            <div className="mt-4 flex flex-col items-center gap-2 pt-4 border-t border-white/5">
+                <div className="flex flex-wrap justify-center gap-4 text-[10px] uppercase tracking-widest font-bold">
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500/40"></div><span className="text-emerald-400">Present</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-rose-500/20 border border-rose-500/40"></div><span className="text-rose-400">Absent</span></div>
+                    <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-gray-500/20 border border-gray-500/40"></div><span className="text-gray-400">Holiday/Weekend</span></div>
+                </div>
+                <span className="text-[10px] text-gray-500 italic mt-1 font-semibold">
+                    * Unmarked days will be counted as Holiday
+                </span>
             </div>
 
             {/* Modals */}
@@ -739,12 +746,19 @@ export const StudentDashboard: React.FC = () => {
                 <header className="lg:hidden px-6 pt-[calc(env(safe-area-inset-top,24px)+0.75rem)] pb-4 bg-black/40 backdrop-blur-xl border-b border-white/5 sticky top-0 z-30 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-gray-400 hover:text-white"><Menu size={24}/></button>
-                        <h1 
-                            className={clsx("text-xl font-greetings font-bold tracking-tight", !greetingsColor && "text-white")}
-                            style={greetingsColor ? { color: greetingsColor } : undefined}
-                        >
-                            {getGreeting(currentTime, state.userName, greetingsCasing)}
-                        </h1>
+                        <div>
+                            <h1 
+                                className={clsx("text-xl font-greetings font-bold tracking-tight", !greetingsColor && "text-white")}
+                                style={greetingsColor ? { color: greetingsColor } : undefined}
+                            >
+                                {getGreeting(currentTime, state.userName, greetingsCasing)}
+                            </h1>
+                            {APP_VERSION === '1.0.9' && (
+                                <p className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 mt-0.5 animate-pulse">
+                                    <GraduationCap size={10} /> REVIEWER BUILD (v1.0.9)
+                                </p>
+                            )}
+                        </div>
                     </div>
                     {renderThemeToggle()}
                 </header>
@@ -759,7 +773,13 @@ export const StudentDashboard: React.FC = () => {
                             >
                                 {getGreeting(currentTime, state.userName, greetingsCasing)}
                             </h1>
-                            <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
+                            {APP_VERSION === '1.0.9' ? (
+                                <p className="text-emerald-400 text-sm font-bold mt-1 flex items-center gap-1.5 animate-pulse">
+                                    <GraduationCap size={16} /> ACADEMIC REVIEWER TARGETED BUILD (v1.0.9)
+                                </p>
+                            ) : (
+                                <p className="text-gray-400 text-sm mt-1">Ready to tackle today's academic goals?</p>
+                            )}
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right">

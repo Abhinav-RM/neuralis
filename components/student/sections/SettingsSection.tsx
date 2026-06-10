@@ -5,6 +5,8 @@ import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
 import { APP_VERSION } from '../../../constants';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 interface SettingsSectionProps {
     state: any;
@@ -152,20 +154,24 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
             
             if (isNative) {
                 sound.playClick();
-                setShowExportModal(true);
-                return;
+                await Share.share({
+                    title: 'Neuralis Backup',
+                    text: JSON.stringify(state),
+                    dialogTitle: 'Export App Data Backup'
+                });
+                sound.playSuccess();
+            } else {
+                // Web browser always downloads standard file directly to local Downloads folder
+                const backupJson = JSON.stringify(state, null, 2);
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupJson);
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `neuralis_backup_${state.userName || 'user'}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                sound.playSuccess();
             }
-
-            // Web browser always downloads standard file directly to local Downloads folder
-            const backupJson = JSON.stringify(state, null, 2);
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(backupJson);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `neuralis_backup_${state.userName || 'user'}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            sound.playSuccess();
         } catch (err) {
             console.error("Export failed:", err);
             sound.playError();
@@ -603,7 +609,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                             <input 
                                 type="file" 
                                 ref={importFileInputRef}
-                                accept="application/json,text/plain,.json" 
+                                accept=".json,application/json" 
                                 onChange={handleFileImport} 
                                 className="hidden" 
                             />
