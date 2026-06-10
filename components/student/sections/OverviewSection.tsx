@@ -87,10 +87,37 @@ export const OverviewSection = React.memo<OverviewSectionProps>(({
                             </p>
                         </div>
                         <div className="text-center md:text-right">
-                            <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                                {getDaysRemaining(nextExam.date)}
-                            </div>
-                            <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">Days Remaining</div>
+                            {(() => {
+                                const dr = getDaysRemaining(nextExam.date);
+                                if (dr === 0) {
+                                    return (
+                                        <>
+                                            <div className="text-3xl font-black text-rose-400 uppercase tracking-wider">
+                                                Today
+                                            </div>
+                                            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-1">Exam Day</div>
+                                        </>
+                                    );
+                                }
+                                if (dr === 1) {
+                                    return (
+                                        <>
+                                            <div className="text-3xl font-black text-amber-400 uppercase tracking-wider">
+                                                Tomorrow
+                                            </div>
+                                            <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mt-1">Prep Day</div>
+                                        </>
+                                    );
+                                }
+                                return (
+                                    <>
+                                        <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                                            {dr}
+                                        </div>
+                                        <div className="text-xs uppercase tracking-widest text-gray-500 font-bold">Days Remaining</div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
                 </motion.div>

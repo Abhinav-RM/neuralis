@@ -21,9 +21,9 @@ interface TasksSectionProps {
 export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams, updateCollege }) => {
     const [showAddAssignment, setShowAddAssignment] = useState(false);
     const [newAssignment, setNewAssignment] = useState({ title: '', subject: '', dueDate: '', reminders: [] as any[] });
-    const [showAddExam, setShowAddExam] = useState(false);
-    const [newExam, setNewExam] = useState({ subject: '', date: '', reminders: [] as any[] });
     const [tempReminder, setTempReminder] = useState({ type: 'date', time: '09:00', at: '', message: '' });
+    const [editingExams, setEditingExams] = useState(false);
+    const [localExams, setLocalExams] = useState<{ id: string; subject: string; date: string }[]>([]);
 
     const handleAddAssignment = () => {
         if (!newAssignment.title || !newAssignment.subject || !newAssignment.dueDate) return;
@@ -33,11 +33,21 @@ export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams,
         sound.playSuccess();
     };
 
-    const handleAddExam = () => {
-        if (!newExam.subject || !newExam.date) return;
-        updateCollege({ exams: [...exams, { id: Date.now().toString(), ...newExam, completed: false }] });
-        setNewExam({ subject: '', date: '', reminders: [] });
-        setShowAddExam(false);
+    const handleSaveExams = () => {
+        const updated = localExams
+            .filter(r => r.subject.trim() && r.date)
+            .map(r => {
+                const existing = exams.find(e => e.id === r.id);
+                return {
+                    id: r.id,
+                    subject: r.subject.trim(),
+                    date: r.date,
+                    reminders: existing?.reminders || [],
+                    completed: existing?.completed || false
+                };
+            });
+        updateCollege({ exams: updated });
+        setEditingExams(false);
         sound.playSuccess();
     };
 
@@ -101,7 +111,7 @@ export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams,
                                                 const dr = getDaysRemaining(assignment.dueDate);
                                                 return (
                                                     <span className={clsx("text-[10px] font-bold shrink-0", dr <= 3 ? "text-rose-400" : "text-blue-400")}>
-                                                        {dr < 0 ? 'Overdue' : `${dr}d remaining`}
+                                                        {dr < 0 ? 'Overdue' : dr === 0 ? 'Today' : dr === 1 ? 'Tomorrow' : `${dr}d remaining`}
                                                     </span>
                                                 );
                                             })()}
@@ -119,57 +129,101 @@ export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams,
             <section className="bg-white/5 border border-white/10 rounded-2xl p-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
                     <h2 className="text-lg md:text-xl font-bold flex items-center gap-2"><BookOpen className="text-blue-400" /> Upcoming Exams</h2>
-                    <button onClick={() => setShowAddExam(!showAddExam)} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><Plus size={20} /></button>
-                </div>
-                {showAddExam && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-4 space-y-3 p-4 bg-black/20 rounded-xl border border-white/5">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><label className="text-xs text-gray-500 uppercase font-bold">Subject</label><input type="text" value={newExam.subject} onChange={(e) => setNewExam({ ...newExam, subject: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm outline-none focus:border-blue-500" placeholder="Subject Name" /></div>
-                            <div className="space-y-2"><label className="text-xs text-gray-500 uppercase font-bold">Date</label><input type="date" value={newExam.date} min={getDateKey(new Date())} onChange={(e) => setNewExam({ ...newExam, date: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm outline-none focus:border-blue-500" /></div>
-                            <div className="p-3 bg-white/5 rounded-lg space-y-3 col-span-2">
-                                <p className="text-[10px] uppercase font-bold text-blue-400">Add Reminders</p>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <select value={tempReminder.type} onChange={(e) => setTempReminder({...tempReminder, type: e.target.value as any})} className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs outline-none focus:border-blue-500"><option value="date" className="bg-[#121214]">Specific Date</option><option value="day-before" className="bg-[#121214]">Day Before</option></select>
-                                    <input type="time" value={tempReminder.time} onChange={(e) => setTempReminder({...tempReminder, time: e.target.value})} className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs outline-none focus:border-blue-500" />
-                                </div>
-                                {tempReminder.type === 'date' && (<input type="date" value={tempReminder.at} onChange={(e) => setTempReminder({...tempReminder, at: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs outline-none focus:border-blue-500" />)}
-                                <input type="text" placeholder="Reminder Message (Optional)" value={tempReminder.message} onChange={(e) => setTempReminder({...tempReminder, message: e.target.value})} className="w-full bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs outline-none focus:border-blue-500" />
-                                <Button size="sm" className="w-full py-1 text-[10px]" onClick={() => { setNewExam({ ...newExam, reminders: [...newExam.reminders, { ...tempReminder, id: Date.now().toString(), enabled: true }] }); setTempReminder({ type: 'date', time: '09:00', at: '', message: '' }); sound.playClick(); }}>+ Add Reminder</Button>
-                                {newExam.reminders.length > 0 && (<div className="space-y-1 mt-2">{newExam.reminders.map((r, ri) => (<div key={r.id} className="flex justify-between items-center text-[10px] bg-black/40 p-1.5 rounded-lg border border-white/5"><span>{r.type === 'day-before' ? 'Day Before' : r.at} @ {r.time}</span><button onClick={() => setNewExam({...newExam, reminders: newExam.reminders.filter((_, idx) => idx !== ri)})} className="text-rose-400"><X size={10}/></button></div>))}</div>)}
-                            </div>
+                    {editingExams ? (
+                        <div className="flex gap-2">
+                            <button onClick={() => setEditingExams(false)} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold transition-colors text-gray-400">Cancel</button>
+                            <button onClick={handleSaveExams} className="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded-lg text-xs font-semibold transition-colors text-white">Save</button>
                         </div>
-                        <Button onClick={handleAddExam} className="w-full py-2 text-sm">Add to Timetable</Button>
-                    </motion.div>
-                )}
-                <div className="space-y-3">
-                    {upcomingExams.length === 0 ? (<div className="text-center py-6 text-gray-500 text-sm italic">No exams scheduled in the timetable.</div>) : (
-                        exams.sort((a,b) => a.date.localeCompare(b.date)).map((exam) => {
-                            const dr = getDaysRemaining(exam.date);
-                            const done = exam.completed || dr < 0;
-                            return (
-                                <div key={exam.id} className={clsx("p-3 rounded-xl border transition-all bg-black/20", done ? "border-white/5 opacity-60" : "border-white/5")}>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-bold text-white truncate">{exam.subject}</div>
-                                            <div className="text-[11px] text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                                                <span>{new Date(exam.date).toLocaleDateString()}</span>
-                                                <span>•</span>
-                                                {done ? (
-                                                    <span className="text-[10px] font-bold text-emerald-400 uppercase shrink-0">Completed</span>
-                                                ) : (
-                                                    <span className={clsx("text-[10px] font-bold shrink-0", dr <= 3 ? "text-rose-400" : "text-blue-400")}>
-                                                        {dr < 0 ? 'Overdue' : `${dr}d remaining`}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <button onClick={() => deleteExam(exam.id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"><Trash2 size={16} /></button>
-                                    </div>
-                                </div>
-                            );
-                        })
+                    ) : (
+                        <button onClick={() => {
+                            setLocalExams(exams.map(e => ({ id: e.id, subject: e.subject, date: e.date })));
+                            setEditingExams(true);
+                            sound.playClick();
+                        }} className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/5 text-gray-300">
+                            Edit Timetable
+                        </button>
                     )}
                 </div>
+                {editingExams ? (
+                    <div className="space-y-3 p-4 bg-black/20 rounded-xl border border-white/5">
+                        <p className="text-xs text-gray-400 mb-2">Configure subject dates below. Empty rows will be discarded on save.</p>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                            {localExams.map((row, index) => (
+                                <div key={row.id} className="flex items-center gap-2">
+                                    <input 
+                                        type="text" 
+                                        placeholder="Subject" 
+                                        value={row.subject} 
+                                        onChange={(e) => {
+                                            const updated = [...localExams];
+                                            updated[index].subject = e.target.value;
+                                            setLocalExams(updated);
+                                        }} 
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white" 
+                                    />
+                                    <input 
+                                        type="date" 
+                                        value={row.date} 
+                                        onChange={(e) => {
+                                            const updated = [...localExams];
+                                            updated[index].date = e.target.value;
+                                            setLocalExams(updated);
+                                        }} 
+                                        className="w-36 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white" 
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            setLocalExams(localExams.filter(item => item.id !== row.id));
+                                            sound.playRobotConfirm();
+                                        }} 
+                                        className="p-2 text-gray-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <button 
+                            onClick={() => {
+                                setLocalExams([...localExams, { id: (Date.now() + Math.random()).toString(), subject: '', date: '' }]);
+                                sound.playClick();
+                            }} 
+                            className="w-full py-2 bg-white/5 border border-dashed border-white/10 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:border-white/20 transition-all"
+                        >
+                            + Add Exam Row
+                        </button>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {upcomingExams.length === 0 ? (<div className="text-center py-6 text-gray-500 text-sm italic">No exams scheduled in the timetable.</div>) : (
+                            exams.sort((a,b) => a.date.localeCompare(b.date)).map((exam) => {
+                                const dr = getDaysRemaining(exam.date);
+                                const done = exam.completed || dr < 0;
+                                return (
+                                    <div key={exam.id} className={clsx("p-3 rounded-xl border transition-all bg-black/20", done ? "border-white/5 opacity-60" : "border-white/5")}>
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="font-bold text-white truncate">{exam.subject}</div>
+                                                <div className="text-[11px] text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                    <span>{new Date(exam.date).toLocaleDateString()}</span>
+                                                    <span>•</span>
+                                                    {done ? (
+                                                        <span className="text-[10px] font-bold text-emerald-400 uppercase shrink-0">Completed</span>
+                                                    ) : (
+                                                        <span className={clsx("text-[10px] font-bold shrink-0", dr <= 3 ? "text-rose-400" : "text-blue-400")}>
+                                                            {dr < 0 ? 'Overdue' : dr === 0 ? 'Today' : dr === 1 ? 'Tomorrow' : `${dr}d remaining`}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button onClick={() => deleteExam(exam.id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"><Trash2 size={16} /></button>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                )}
             </section>
         </div>
     );
