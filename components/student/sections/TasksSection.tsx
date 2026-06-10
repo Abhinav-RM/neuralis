@@ -90,7 +90,22 @@ export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams,
                                     <button onClick={() => toggleAssignment(assignment.id)} className={clsx("mt-1 w-5 h-5 rounded flex items-center justify-center border transition-colors shrink-0", assignment.completed ? "bg-emerald-500 border-emerald-500 text-white" : "border-gray-500 text-transparent")}><Check size={14} /></button>
                                     <div className="flex-1 min-w-0">
                                         <div className={clsx("font-medium truncate", assignment.completed && "line-through")}>{assignment.title}</div>
-                                        <div className="text-xs text-gray-400 mt-1 flex items-center gap-2"><span className="truncate">{assignment.subject}</span><span>•</span><span>{new Date(assignment.dueDate).toLocaleDateString()}</span></div>
+                                        <div className="text-[11px] text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                            <span className="truncate font-semibold text-gray-300">{assignment.subject}</span>
+                                            <span>•</span>
+                                            <span>{new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                            <span>•</span>
+                                            {assignment.completed ? (
+                                                <span className="text-[10px] font-bold text-emerald-400 uppercase shrink-0">Completed</span>
+                                            ) : (() => {
+                                                const dr = getDaysRemaining(assignment.dueDate);
+                                                return (
+                                                    <span className={clsx("text-[10px] font-bold shrink-0", dr <= 3 ? "text-rose-400" : "text-blue-400")}>
+                                                        {dr < 0 ? 'Overdue' : `${dr}d remaining`}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
                                     </div>
                                     <button onClick={() => deleteAssignment(assignment.id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"><Trash2 size={16} /></button>
                                 </div>
@@ -128,18 +143,31 @@ export const TasksSection = React.memo<TasksSectionProps>(({ assignments, exams,
                 )}
                 <div className="space-y-3">
                     {upcomingExams.length === 0 ? (<div className="text-center py-6 text-gray-500 text-sm italic">No exams scheduled in the timetable.</div>) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead><tr className="border-b border-white/10 text-[10px] uppercase tracking-widest text-gray-500 font-bold"><th className="py-3 px-4">Subject</th><th className="py-3 px-4 text-center">Date</th><th className="py-3 px-4 text-center">Remaining</th><th className="py-3 px-4 text-right">Action</th></tr></thead>
-                                <tbody>
-                                    {exams.sort((a,b) => a.date.localeCompare(b.date)).map((exam) => {
-                                        const dr = getDaysRemaining(exam.date);
-                                        const done = exam.completed || dr < 0;
-                                        return (<tr key={exam.id} className={clsx("border-b border-white/5 group hover:bg-white/5 transition-colors", done && "opacity-50")}><td className="py-4 px-4 font-bold text-white">{exam.subject}</td><td className="py-4 px-4 text-center text-gray-400 text-sm">{new Date(exam.date).toLocaleDateString()}</td><td className="py-4 px-4 text-center">{done ? (<span className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">Completed</span>) : (<span className={clsx("px-2 py-1 rounded-full text-[10px] font-bold", dr <= 3 ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-blue-500/20 text-blue-400 border border-blue-500/30")}>{dr} Days</span>)}</td><td className="py-4 px-4 text-right"><button onClick={() => deleteExam(exam.id)} className="p-2 text-gray-500 hover:text-rose-400 transition-colors"><Trash2 size={16} /></button></td></tr>);
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
+                        exams.sort((a,b) => a.date.localeCompare(b.date)).map((exam) => {
+                            const dr = getDaysRemaining(exam.date);
+                            const done = exam.completed || dr < 0;
+                            return (
+                                <div key={exam.id} className={clsx("p-3 rounded-xl border transition-all bg-black/20", done ? "border-white/5 opacity-60" : "border-white/5")}>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-bold text-white truncate">{exam.subject}</div>
+                                            <div className="text-[11px] text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                                <span>{new Date(exam.date).toLocaleDateString()}</span>
+                                                <span>•</span>
+                                                {done ? (
+                                                    <span className="text-[10px] font-bold text-emerald-400 uppercase shrink-0">Completed</span>
+                                                ) : (
+                                                    <span className={clsx("text-[10px] font-bold shrink-0", dr <= 3 ? "text-rose-400" : "text-blue-400")}>
+                                                        {dr < 0 ? 'Overdue' : `${dr}d remaining`}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <button onClick={() => deleteExam(exam.id)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"><Trash2 size={16} /></button>
+                                    </div>
+                                </div>
+                            );
+                        })
                     )}
                 </div>
             </section>
