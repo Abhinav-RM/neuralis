@@ -5,7 +5,6 @@ import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
 import { APP_VERSION } from '../../../constants';
 import { validateBackupSchema } from '../../../utils/schemaValidator';
-import { useApp } from '../../../context/AppContext';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Share } from '@capacitor/share';
@@ -29,7 +28,6 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
     monthsToRender, selectedMonths, toggleMonth,
     handleReset, handleFactoryReset, themePresets, importData
 }) => {
-    const { resetAll } = useApp();
     const [isAttCollapsed, setIsAttCollapsed] = useState(true);
     const [isCustCollapsed, setIsCustCollapsed] = useState(true);
     
@@ -669,18 +667,7 @@ export const SettingsSection = React.memo<SettingsSectionProps>(({
                 <div className="p-6 bg-red-500/5">
                     <h3 className="text-red-400 font-bold flex items-center gap-2 mb-2"><AlertCircle size={20} /> Danger Zone</h3>
                     <p className="text-gray-400 text-sm mb-6">Permanently delete all data and reset the application. This action cannot be undone.</p>
-                    <div className="flex gap-3">
-                        <Button variant="danger" onClick={handleFactoryReset}>Factory Reset</Button>
-                        <Button 
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-semibold"
-                            onClick={() => {
-                                resetAll();
-                                window.location.reload();
-                            }}
-                        >
-                            check
-                        </Button>
-                    </div>
+                    <Button variant="danger" onClick={handleFactoryReset}>Factory Reset</Button>
                 </div>
             </div>
 
