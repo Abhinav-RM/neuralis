@@ -138,6 +138,33 @@ export const NotificationManager: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        const registerDynamicChannel = async () => {
+            const isNative = Capacitor.isNativePlatform();
+            if (isNative && state.customization?.systemNotificationSoundUri) {
+                try {
+                    const uri = state.customization.systemNotificationSoundUri;
+                    const soundName = state.customization.systemNotificationSoundName || 'Custom';
+                    const cleanBase64 = btoa(uri).replace(/[^a-zA-Z0-9]/g, '').slice(-12);
+                    const channelId = `neuralis_sys_${cleanBase64}`;
+                    
+                    await LocalNotifications.createChannel({
+                        id: channelId,
+                        name: `System: ${soundName}`,
+                        description: `System custom sound: ${soundName}`,
+                        importance: 5,
+                        sound: uri,
+                        visibility: 1,
+                        vibration: true
+                    });
+                } catch (e) {
+                    console.error("Failed to register dynamic system ringtone channel", e);
+                }
+            }
+        };
+        registerDynamicChannel();
+    }, [state.customization?.systemNotificationSoundUri]);
+
+    useEffect(() => {
         // Debounce scheduling to avoid rapid re-schedules on boot
         const nowTime = Date.now();
         const isFirstRun = lastScheduleRef.current === 0;
@@ -162,29 +189,22 @@ export const NotificationManager: React.FC = () => {
                 repeats?: string;
                 days?: number[];
                 sound?: string;
-            }[] = [
-                { baseId: 300, hour: college.booksReminderHour, minute: college.booksReminderMinute, msg: state.notificationMessages.books, module: 'college', type: 'reminder', skip: !state.notificationToggles.books, sound: 'default' },
-                { baseId: 400, hour: college.idReminderHour || 21, minute: college.idReminderMinute || 0, msg: state.notificationMessages.idcard, module: 'college', type: 'reminder', skip: !state.notificationToggles.idcard, sound: 'default' },
-                { baseId: 500, hour: college.homeworkReminderHour, minute: college.homeworkReminderMinute, msg: state.notificationMessages.homework, module: 'college', type: 'homework', skip: !state.notificationToggles.homework, sound: 'default' },
-                { baseId: 600, hour: state.morningReminderHour || 8, minute: state.morningReminderMinute || 0, msg: state.notificationMessages.morning, skip: !state.notificationToggles.morning, sound: 'default' },
-                // Custom Notifications — use stable IDs derived from cn.id to prevent collisions on delete
-                ...(college.customNotifications || [])
-                    .filter(cn => cn.enabled)
-                    .map((cn) => {
-                        const [h, m] = cn.time.split(':').map(Number);
-                        const stableBase = 10000 + (Math.abs(parseInt(cn.id, 10)) % 50000);
-                        return {
-                            baseId: stableBase,
-                            hour: h,
-                            minute: m,
-                            msg: cn.message,
-                            skip: false,
-                            repeats: cn.repeats || 'daily',
-                            days: cn.days,
-                            sound: cn.sound || 'default'
-                        };
-                    })
-            ].filter(t => !t.skip);
+            }[] = (college.customNotifications || [])
+                .filter(cn => cn.enabled)
+                .map((cn) => {
+                    const [h, m] = cn.time.split(':').map(Number);
+                    const stableBase = 10000 + (Math.abs(parseInt(cn.id, 10)) % 50000);
+                    return {
+                        baseId: stableBase,
+                        hour: h,
+                        minute: m,
+                        msg: cn.message,
+                        skip: false,
+                        repeats: cn.repeats || 'daily',
+                        days: cn.days,
+                        sound: cn.sound || 'default'
+                    };
+                });
 
             const allEvents: any[] = [];
             const usedIds = new Set<number>(); // Track used IDs to prevent any collision
@@ -193,7 +213,7 @@ export const NotificationManager: React.FC = () => {
                 // Determine how many days to schedule based on `repeats`
                 const maxDays = t.repeats === 'once' ? 1
                     : t.repeats === 'twice' ? 2
-                    : 14; // 'daily', 'specific-days', or system notifications
+                    : 14; // 'daily', 'specific-days'
 
                 let scheduled = 0;
                 for (let i = 0; i < 14 && scheduled < maxDays; i++) {
@@ -204,11 +224,6 @@ export const NotificationManager: React.FC = () => {
                     // Skip if this specific time is already in the past (add 5s buffer to avoid instant fire)
                     if (target.getTime() <= now.getTime() + 5000) {
                         continue;
-                    }
-
-                    // Weekend logic for College system notifications
-                    if ([300, 400, 500].includes(t.baseId)) {
-                        if (target.getDay() === 0 || target.getDay() === 6) continue;
                     }
 
                     // Specific-days filter for custom notifications
@@ -313,7 +328,11 @@ export const NotificationManager: React.FC = () => {
                     const capNotifications = allEvents.map(e => {
                         const selectedSound = e.sound || state.customization?.defaultNotificationSound || 'default';
                         let channelId = 'neuralis_default';
-                        if (['chime', 'ping', 'cyber', 'beep', 'silent'].includes(selectedSound)) {
+                        if (selectedSound === 'system_custom' && state.customization?.systemNotificationSoundUri) {
+                            const uri = state.customization.systemNotificationSoundUri;
+                            const cleanBase64 = btoa(uri).replace(/[^a-zA-Z0-9]/g, '').slice(-12);
+                            channelId = `neuralis_sys_${cleanBase64}`;
+                        } else if (['chime', 'ping', 'cyber', 'beep', 'silent'].includes(selectedSound)) {
                             channelId = `neuralis_${selectedSound}`;
                         }
                         
@@ -411,11 +430,6 @@ export const NotificationManager: React.FC = () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, [
-        college.booksReminderHour, college.booksReminderMinute,
-        college.idReminderHour, college.idReminderMinute,
-        college.homeworkReminderHour, college.homeworkReminderMinute,
-        state.morningReminderHour, state.morningReminderMinute,
-        state.notificationMessages,
         state.customization?.defaultNotificationSound,
         college.customNotifications, college.assignments, college.exams
     ]);

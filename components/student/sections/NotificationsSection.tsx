@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Bell, Clock, CheckSquare, BookOpen, Plus, Trash2, X, AlertCircle, Edit2, Volume2, Upload } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { sound } from '../../../utils/sound';
+import { Capacitor } from '@capacitor/core';
+import { RingtonePicker } from '../../../utils/ringtonePicker';
 
 interface NotificationsSectionProps {
     state: any;
@@ -60,28 +62,38 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({
     };
 
     const handleSoundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        try {
+            const file = e.target.files?.[0];
+            if (!file) return;
 
-        // Limit size to 1MB to avoid bloated localStorage
-        if (file.size > 1 * 1024 * 1024) {
-            alert("File is too large! Please choose an audio file under 1MB.");
-            return;
+            // Limit size to 1MB to avoid bloated localStorage
+            if (file.size > 1 * 1024 * 1024) {
+                alert("File is too large! Please choose an audio file under 1MB.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64Data = reader.result as string;
+                const currentUploaded = state.customization?.uploadedSounds || [];
+                const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+                const newSound = { name: cleanName, data: base64Data };
+                
+                updateCustomization({
+                    uploadedSounds: [...currentUploaded.filter((s: any) => s.name !== cleanName), newSound]
+                });
+                sound.playSuccess();
+            };
+            reader.onerror = () => {
+                sound.playError();
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error("Audio upload stream failure:", err);
+            sound.playError();
+        } finally {
+            e.target.value = '';
         }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64Data = reader.result as string;
-            const currentUploaded = state.customization?.uploadedSounds || [];
-            const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-            const newSound = { name: cleanName, data: base64Data };
-            
-            updateCustomization({
-                uploadedSounds: [...currentUploaded.filter((s: any) => s.name !== cleanName), newSound]
-            });
-            sound.playSuccess();
-        };
-        reader.readAsDataURL(file);
     };
 
     const handleAdd = () => {
@@ -239,6 +251,11 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({
                                     <option value="cyber" className="bg-[#121214]">Cyber Sweep (Sci-Fi Sweep)</option>
                                     <option value="beep" className="bg-[#121214]">Triple Beep (Pulse Alarm)</option>
                                     <option value="silent" className="bg-[#121214]">Silent (Vibration Only)</option>
+                                    {state.customization?.systemNotificationSoundUri && (
+                                        <option value="system_custom" className="bg-[#121214]">
+                                            System: {state.customization.systemNotificationSoundName || 'Custom'}
+                                        </option>
+                                    )}
                                     {(state.customization?.uploadedSounds || []).map((s: any) => (
                                         <option key={s.name} value={`uploaded_${s.name}`} className="bg-[#121214]">
                                             Custom: {s.name}
@@ -249,6 +266,7 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({
                                     onClick={() => playSoundPreview(state.customization?.defaultNotificationSound || 'default')}
                                     className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-gray-300 transition-all active:scale-95"
                                     title="Play Sound Preview"
+                                    disabled={state.customization?.defaultNotificationSound === 'system_custom'}
                                 >
                                     <Volume2 size={16} />
                                 </button>
@@ -264,7 +282,32 @@ export const NotificationsSection = React.memo<NotificationsSectionProps>(({
                                     className="hidden" 
                                 />
                             </label>
+
+                            {Capacitor.isNativePlatform() && (
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const res = await RingtonePicker.pickRingtone({
+                                                existingUri: state.customization?.systemNotificationSoundUri || undefined
+                                            });
+                                            updateCustomization({
+                                                defaultNotificationSound: 'system_custom',
+                                                systemNotificationSoundUri: res.uri,
+                                                systemNotificationSoundName: res.name
+                                            });
+                                            sound.playSuccess();
+                                        } catch (err) {
+                                            console.warn("System sound selection cancelled", err);
+                                        }
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 hover:text-purple-300 rounded-lg text-xs font-bold cursor-pointer transition-all active:scale-98"
+                                >
+                                    <Volume2 size={14} />
+                                    Select System Sound
+                                </button>
+                            )}
                         </div>
+
                         <p className="text-[10px] text-gray-500">
                             Note: Uploaded custom sounds play while the app is in the foreground. Background alerts will use your preloaded selection chime/ping/cyber/beep/default.
                         </p>

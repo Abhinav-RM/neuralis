@@ -15,12 +15,6 @@ const INITIAL_STATE: AppState = {
         attendanceHistory: {},
         timetable: DEFAULT_COLLEGE_TIMETABLE,
         assignments: [],
-        booksReminderHour: 21,
-        booksReminderMinute: 0,
-        idReminderHour: 21,
-        idReminderMinute: 0,
-        homeworkReminderHour: 20,
-        homeworkReminderMinute: 0,
         booksPackedCount: 0,
         idCardRemembered: 0,
         homeworkCompleted: 0,
@@ -56,20 +50,6 @@ const INITIAL_STATE: AppState = {
         soundEnabled: true,
         vibrationEnabled: true,
         storagePermission: 'prompt'
-    },
-    morningReminderHour: 8,
-    morningReminderMinute: 0,
-    notificationToggles: {
-        books: true,
-        idcard: true,
-        homework: true,
-        morning: true
-    },
-    notificationMessages: {
-        books: "Pack your books for tomorrow. 📚",
-        idcard: "Ensure your ID card and books are ready. 🪪",
-        homework: "Homework Check: Ensure all assignments are completed. 📝",
-        morning: "Morning Protocol Active. ☀️"
     },
     midnightLock: true,
     lastSyncTimestamp: 0,
@@ -310,17 +290,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                     }
 
                     if (parsed.college) {
-                        if (parsed.college.booksReminderMinute === undefined) parsed.college.booksReminderMinute = 0;
-                        if (parsed.college.idReminderMinute === undefined) parsed.college.idReminderMinute = 0;
-                        if (parsed.college.homeworkReminderMinute === undefined) parsed.college.homeworkReminderMinute = 0;
+                        delete parsed.college.booksReminderHour;
+                        delete parsed.college.booksReminderMinute;
+                        delete parsed.college.idReminderHour;
+                        delete parsed.college.idReminderMinute;
+                        delete parsed.college.homeworkReminderHour;
+                        delete parsed.college.homeworkReminderMinute;
                     }
 
-                    if (!parsed.notificationToggles) {
-                        parsed.notificationToggles = INITIAL_STATE.notificationToggles;
-                    }
-                    if (!parsed.notificationMessages) {
-                        parsed.notificationMessages = INITIAL_STATE.notificationMessages;
-                    }
+                    delete parsed.morningReminderHour;
+                    delete parsed.morningReminderMinute;
+                    delete parsed.notificationToggles;
+                    delete parsed.notificationMessages;
                     if (parsed.theme === undefined) {
                         parsed.theme = 'system';
                     }

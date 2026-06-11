@@ -67,12 +67,6 @@ export interface CollegeState {
     attendanceHistory: Record<string, AttendanceRecord>;
     timetable: Record<number, TimetableDay>;
     assignments: Assignment[];
-    booksReminderHour: number;
-    booksReminderMinute: number;
-    idReminderHour: number;
-    idReminderMinute: number;
-    homeworkReminderHour: number;
-    homeworkReminderMinute: number;
     booksPackedCount: number;
     idCardRemembered: number;
     homeworkCompleted: number;
@@ -123,20 +117,6 @@ export interface AppState {
     userName?: string;
     college: CollegeState;
     customization: CustomizationState;
-    morningReminderHour: number;
-    morningReminderMinute: number;
-    notificationToggles: {
-        books: boolean;
-        idcard: boolean;
-        homework: boolean;
-        morning: boolean;
-    };
-    notificationMessages: {
-        books: string;
-        idcard: string;
-        homework: string;
-        morning: string;
-    };
     midnightLock: boolean;
     pendingAction?: {
         module: ModuleType;

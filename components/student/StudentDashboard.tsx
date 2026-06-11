@@ -302,7 +302,7 @@ const THEME_PRESETS = [
 export const StudentDashboard: React.FC = () => {
     const { state, updateState, updateCustomization, updateCollege, resetAll, importData } = useApp();
     const { college } = state;
-    const { assignments, exams, timetable, attendanceHistory, remarks, dailyFlags } = college;
+    const { assignments, exams, timetable, attendanceHistory, remarks } = college;
 
     const [currentTime, setCurrentTime] = useState(new Date());
     const [activeSection, setActiveSection] = useState('overview');
@@ -470,12 +470,6 @@ export const StudentDashboard: React.FC = () => {
         }
     }, [attendanceHistory, updateCollege]);
 
-    const toggleDaily = useCallback((key: keyof typeof dailyFlags) => {
-        updateCollege({
-            dailyFlags: { ...dailyFlags, [key]: !dailyFlags[key] }
-        });
-        sound.playClick();
-    }, [dailyFlags, updateCollege]);
 
     const monthsToRender = useMemo(() => {
         const now = new Date();

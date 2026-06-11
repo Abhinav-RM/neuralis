@@ -29,3 +29,8 @@ dist-ssr
 # Vite dependency cache & Vercel
 .vite
 .vercel
+
+# Android signing keys
+*.keystore
+*.jks
+
